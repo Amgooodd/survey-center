@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatelessWidget {
-  final TextEditingController _nationalIdController = TextEditingController();
+class SignUpScreen extends StatelessWidget {
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nationalIdController = TextEditingController();
 
-  void _login(BuildContext context) {
-    final String nationalId = _nationalIdController.text;
+  void _signUp(BuildContext context) {
+    final String email = _emailController.text;
     final String password = _passwordController.text;
-    if (nationalId.isNotEmpty && password.isNotEmpty) {
-      print(
-          "National ID: ${_nationalIdController.text}, Password: ${_passwordController.text}");
+    final String nationalId = _nationalIdController.text;
+
+    if (email.isNotEmpty && password.isNotEmpty && nationalId.isNotEmpty) {
+      print("Email: $email, Password: $password, National ID: $nationalId");
     } else {
       String message = "";
-      if (nationalId.isEmpty && password.isEmpty) {
-        message = "Please enter both National ID and Password";
-      } else if (nationalId.isEmpty) {
-        message = "Please enter National ID";
+      if (email.isEmpty) {
+        message = "Please enter your email address";
       } else if (password.isEmpty) {
-        message = "Please enter Password";
+        message = "Please create a password";
+      } else if (nationalId.isEmpty) {
+        message = "Please add your National ID";
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -30,7 +32,7 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Login", style: TextStyle(color: Colors.black)),
+        title: Text("Create Account", style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -44,39 +46,57 @@ class LoginScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Login",
+              "Create Account",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              "Welcome back! Please login to continue.",
+              "Join us to share your insights and participate in surveys.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             SizedBox(height: 32),
             TextField(
-              controller: _nationalIdController,
+              controller: _emailController,
               decoration: InputDecoration(
-                labelText: "National ID",
-                hintText: "Enter your National ID",
+                prefixIcon: Icon(Icons.email),
+                labelText: "Your email address",
                 border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.number,
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               decoration: InputDecoration(
-                labelText: "Password",
-                hintText: "Enter your password",
+                prefixIcon: Icon(Icons.lock),
+                labelText: "Create a password",
                 border: OutlineInputBorder(),
               ),
               obscureText: true,
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 16),
+            TextField(
+              controller: _nationalIdController,
+              decoration: InputDecoration(
+                prefixIcon: Icon(Icons.person),
+                labelText: "Add your National ID",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Checkbox(
+                  value: true,
+                  onChanged: (value) {},
+                ),
+                Text("I agree with Terms & Conditions"),
+              ],
+            ),
+            SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => _login(context),
-              child: Text("Login", style: TextStyle(color: Colors.white)),
+              onPressed: () => _signUp(context),
+              child: Text("Sign Up", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
@@ -87,27 +107,17 @@ class LoginScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Don't have an account? "),
+                Text("Already registered? "),
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, '/signup');
+                    Navigator.pushNamed(context, '/login');
                   },
                   child: Text(
-                    "Sign Up",
+                    "Log In",
                     style: TextStyle(color: Colors.blue),
                   ),
                 ),
               ],
-            ),
-            SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/forgetpassword');
-              },
-              child: Text(
-                "Forgot Password?",
-                style: TextStyle(color: Colors.blue),
-              ),
             ),
           ],
         ),
