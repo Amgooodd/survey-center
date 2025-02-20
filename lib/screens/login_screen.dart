@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatelessWidget {
-  // Controllers for the input fields
+ 
   final TextEditingController _nationalIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Function to handle login
+
   void _login(BuildContext context) {
     final String nationalId = _nationalIdController.text;
     final String password = _passwordController.text;

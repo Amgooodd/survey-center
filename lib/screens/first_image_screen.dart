@@ -13,9 +13,9 @@ class FirstImageScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/first_image.png', // Ensure this is the correct path to your logo image
-                  width: 100, // Adjust size as needed
-                  height: 100, // Adjust size as needed
+                  'assets/first_image.png', 
+                  width: 100, 
+                  height: 100, 
                 ),
                 SizedBox(height: 20),
                 Text(
@@ -51,7 +51,7 @@ class FirstImageScreen extends StatelessWidget {
               },
               backgroundColor: Colors.white,
               textColor: Colors
-                  .black, // Assuming AnimatedButton has a textColor property
+                  .black, 
             ),
           ),
         ],
