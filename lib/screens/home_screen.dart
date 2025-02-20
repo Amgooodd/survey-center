@@ -34,7 +34,7 @@ class HomeScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     // Navigate to Admin screen
-                    Navigator.pushNamed(context, '/admin');
+                    Navigator.pushNamed(context, '/login');
                   },
                   child: Column(
                     children: [
@@ -54,7 +54,7 @@ class HomeScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     // Navigate to Student screen
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, '/studentlogin');
                   },
                   child: Column(
                     children: [

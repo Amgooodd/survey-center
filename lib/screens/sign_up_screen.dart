@@ -1,30 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nationalIdController = TextEditingController();
 
-  void _signUp(BuildContext context) {
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
-    final String nationalId = _nationalIdController.text;
+  Future<void> _signUp(BuildContext context) async {
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+    final String nationalId = _nationalIdController.text.trim();
 
-    if (email.isNotEmpty && password.isNotEmpty && nationalId.isNotEmpty) {
-      print("Email: $email, Password: $password, National ID: $nationalId");
-    } else {
-      String message = "";
-      if (email.isEmpty) {
-        message = "Please enter your email address";
-      } else if (password.isEmpty) {
-        message = "Please create a password";
-      } else if (nationalId.isEmpty) {
-        message = "Please add your National ID";
-      }
+    // Validate fields
+    if (email.isEmpty || password.isEmpty || nationalId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text("Please fill in all fields.")),
+      );
+      return;
+    }
+
+    // Validate National ID (must be exactly 14 digits)
+    if (nationalId.length != 14 || !isNumeric(nationalId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("National ID must be exactly 14 digits.")),
+      );
+      return;
+    }
+
+    try {
+      // Create user in Firebase Authentication
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Save additional user data to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'nationalId': nationalId,
+        'isAdmin': false, // Set to true for admin accounts
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Sign up successful!")),
+        );
+      });
+      // Navigate to the login screen
+      Navigator.pushReplacementNamed(context, '/login');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("The password provided is too weak.")),
+        );
+      } else if (e.code == 'email-already-in-use') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("The account already exists for that email.")),
+        );
+      }
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("An error occurred. Please try again later.")),
       );
     }
+  }
+
+  // Helper function to check if a string contains only numeric characters
+  bool isNumeric(String str) {
+    return double.tryParse(str) != null && str.isNotEmpty;
   }
 
   @override
@@ -77,9 +130,10 @@ class SignUpScreen extends StatelessWidget {
             SizedBox(height: 16),
             TextField(
               controller: _nationalIdController,
+              keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 prefixIcon: Icon(Icons.person),
-                labelText: "Add your National ID",
+                labelText: "Add your National ID (14 digits)",
                 border: OutlineInputBorder(),
               ),
             ),

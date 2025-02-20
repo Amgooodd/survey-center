@@ -1,28 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatelessWidget {
-  final TextEditingController _nationalIdController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _login(BuildContext context) {
-    final String nationalId = _nationalIdController.text;
+  Future<void> _login(BuildContext context) async {
+    final String email = _emailController.text;
     final String password = _passwordController.text;
-    if (nationalId.isNotEmpty && password.isNotEmpty) {
-      print(
-          "National ID: ${_nationalIdController.text}, Password: ${_passwordController.text}");
+
+    if (email.isNotEmpty && password.isNotEmpty) {
+      try {
+        // Attempt to sign in the user
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        // Check if the user is an admin (you can use Firestore or a flag in the user object)
+        bool isAdmin = await _checkIfUserIsAdmin(userCredential.user!.uid);
+
+        if (isAdmin) {
+          // Redirect to Admin Dashboard
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        } else {
+          // Redirect to Home Screen for regular users
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Login successful!")),
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'user-not-found') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("No user found for that email.")),
+          );
+        } else if (e.code == 'wrong-password') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Wrong password provided for that user.")),
+          );
+        }
+      } catch (e) {
+        print("Error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("An error occurred. Please try again later.")),
+        );
+      }
     } else {
       String message = "";
-      if (nationalId.isEmpty && password.isEmpty) {
-        message = "Please enter both National ID and Password";
-      } else if (nationalId.isEmpty) {
-        message = "Please enter National ID";
+      if (email.isEmpty && password.isEmpty) {
+        message = "Please enter both email and password";
+      } else if (email.isEmpty) {
+        message = "Please enter email";
       } else if (password.isEmpty) {
-        message = "Please enter Password";
+        message = "Please enter password";
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
     }
+  }
+
+  // Function to check if the user is an admin
+  Future<bool> _checkIfUserIsAdmin(String uid) async {
+    // Example: Check Firestore to see if the user is an admin
+    final DocumentSnapshot snapshot =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    return snapshot['isAdmin'] ??
+        false; // Assuming you have an 'isAdmin' field in Firestore
   }
 
   @override
@@ -49,29 +97,28 @@ class LoginScreen extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              "Welcome back! Please login to continue.",
+              "Welcome back! Please sign in to continue.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             SizedBox(height: 32),
             TextField(
-              controller: _nationalIdController,
+              controller: _emailController,
               decoration: InputDecoration(
-                labelText: "National ID",
-                hintText: "Enter your National ID",
+                labelText: "Email",
+                hintText: "Enter your email",
                 border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.number,
             ),
             SizedBox(height: 20),
             TextField(
               controller: _passwordController,
+              obscureText: true,
               decoration: InputDecoration(
                 labelText: "Password",
                 hintText: "Enter your password",
                 border: OutlineInputBorder(),
               ),
-              obscureText: true,
             ),
             SizedBox(height: 20),
             ElevatedButton(
