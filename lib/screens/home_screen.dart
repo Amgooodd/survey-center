@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/animated_button.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -33,8 +32,7 @@ class HomeScreen extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to Admin screen
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, '/adminlogin');
                   },
                   child: Column(
                     children: [
@@ -53,7 +51,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to Student screen
+                  
                     Navigator.pushNamed(context, '/studentlogin');
                   },
                   child: Column(
@@ -74,23 +72,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                // Handle Continue button press
-                // You can add the logic here to navigate to the next screen
-              },
-              child: Text("Continue", style: TextStyle(fontSize: 18)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                minimumSize: Size(double.infinity, 50),
-              ),
-            ),
-            SizedBox(height: 16),
           ],
         ),
       ),

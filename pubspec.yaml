@@ -25,7 +25,7 @@ flutter_icons:
   ios: true
   image_path: "assets/icon/app_icon.png"
   adaptive_icon_foreground: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#ffffff" # Change background color if needed
+  adaptive_icon_background: "#ffffff"
   remove_alpha_ios: true
 
 flutter:

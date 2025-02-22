@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class StudentLogin extends StatefulWidget {
+class AdminLogin extends StatefulWidget {
   @override
-  _StudentLoginState createState() => _StudentLoginState();
+  _adminLoginState createState() => _adminLoginState();
 }
 
-class _StudentLoginState extends State<StudentLogin> {
+class _adminLoginState extends State<AdminLogin> {
   final TextEditingController _idController = TextEditingController();
 
-  Future<void> _validateStudentId() async {
+  Future<bool> _checkadminId(String id) async {
+    try {
+     
+      final DocumentSnapshot snapshot =
+          await FirebaseFirestore.instance.collection('admins').doc(id).get();
+
+      return snapshot.exists;
+    } catch (e) {
+      print("Error checking admin ID: $e");
+      return false; 
+    }
+  }
+
+  void _validateadminId() async {
     final String id = _idController.text.trim();
+
     if (id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please enter your ID.")),
@@ -18,16 +32,16 @@ class _StudentLoginState extends State<StudentLogin> {
       return;
     }
 
-    // Check if the student ID exists in Firestore
-    final DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance.collection('students').doc(id).get();
-    if (snapshot.exists) {
-      // Redirect to the welcome screen if the ID is valid
-      Navigator.pushReplacementNamed(context, '/welcome', arguments: id);
+    bool isValid = await _checkadminId(id);
+
+    if (isValid) {
+      
+      Navigator.pushReplacementNamed(context, '/admin_dashboard',
+          arguments: id);
     } else {
-      // Show an error message if the ID is invalid
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Invalid student ID. Please try again.")),
+        SnackBar(content: Text("Invalid admin ID. Please try again.")),
       );
     }
   }
@@ -36,7 +50,7 @@ class _StudentLoginState extends State<StudentLogin> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Student Login"),
+        title: Text("admin Login"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -44,7 +58,7 @@ class _StudentLoginState extends State<StudentLogin> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Enter Your Student ID",
+              "Enter Your admin ID",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
@@ -52,14 +66,15 @@ class _StudentLoginState extends State<StudentLogin> {
               controller: _idController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: "Student ID",
+                labelText: "admin ID",
                 border: OutlineInputBorder(),
               ),
-              onEditingComplete: _validateStudentId,
+              onEditingComplete:
+                  _validateadminId, 
             ),
             SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _validateStudentId,
+              onPressed: _validateadminId,
               child: Text("Submit", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
