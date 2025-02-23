@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminLogin extends StatefulWidget {
+  const AdminLogin({super.key});
+
   @override
   _adminLoginState createState() => _adminLoginState();
 }
@@ -11,14 +13,13 @@ class _adminLoginState extends State<AdminLogin> {
 
   Future<bool> _checkadminId(String id) async {
     try {
-     
       final DocumentSnapshot snapshot =
           await FirebaseFirestore.instance.collection('admins').doc(id).get();
 
       return snapshot.exists;
     } catch (e) {
       print("Error checking admin ID: $e");
-      return false; 
+      return false;
     }
   }
 
@@ -35,11 +36,8 @@ class _adminLoginState extends State<AdminLogin> {
     bool isValid = await _checkadminId(id);
 
     if (isValid) {
-      
-      Navigator.pushReplacementNamed(context, '/admin_dashboard',
-          arguments: id);
+      Navigator.pushReplacementNamed(context, '/firsrforadminn', arguments: id);
     } else {
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Invalid admin ID. Please try again.")),
       );
@@ -69,18 +67,17 @@ class _adminLoginState extends State<AdminLogin> {
                 labelText: "admin ID",
                 border: OutlineInputBorder(),
               ),
-              onEditingComplete:
-                  _validateadminId, 
+              onEditingComplete: _validateadminId,
             ),
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _validateadminId,
-              child: Text("Submit", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child: Text("Submit", style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
