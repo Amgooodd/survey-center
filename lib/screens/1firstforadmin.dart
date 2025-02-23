@@ -1,98 +1,213 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class firstforadmin extends StatefulWidget {
-  const firstforadmin({super.key});
+class FirstForAdmin extends StatefulWidget {
+  const FirstForAdmin({super.key});
 
   @override
-  _firstforadmin createState() => _firstforadmin();
+  _FirstForAdminState createState() => _FirstForAdminState();
 }
 
-class _firstforadmin extends State<firstforadmin> {
+class _FirstForAdminState extends State<FirstForAdmin> {
+  late Stream<QuerySnapshot> _surveysStream;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the stream to fetch surveys from Firestore
+    _surveysStream =
+        FirebaseFirestore.instance.collection('surveys').snapshots();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: ListView(
+        padding: EdgeInsets.zero,
         children: [
           SizedBox(height: 50),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Surveys',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Home for Admin',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search),
+                    hintText: 'Search surveys...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/createsurvv');
-                },
-                child: Text('Create Survey',
-                    style: TextStyle(color: Colors.white)),
-              ),
-              SizedBox(width: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[300],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                SizedBox(height: 20),
+                Text(
+                  'Create a New Survey',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text('Follow the instructions to create your survey.'),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/createsurvv');
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.add, color: Colors.white),
+                          Text(' Create Survey',
+                              style: TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[300],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/showsurvv');
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, color: Colors.black),
+                          Text(' Edit Survey',
+                              style: TextStyle(color: Colors.black)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/groupp');
+                  },
+                  child: Row(
+                    children: [
+                      Icon(Icons.remove_red_eye, color: Colors.white),
+                      Text(' View Groups',
+                          style: TextStyle(color: Colors.white)),
+                    ],
                   ),
                 ),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/showsurvv');
-                },
-                child:
-                    Text('Edit Survey', style: TextStyle(color: Colors.black)),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
+                SizedBox(height: 20),
+                Text(
+                  'Surveys',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                StreamBuilder<QuerySnapshot>(
+                  stream: _surveysStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Text('Something went wrong');
+                    }
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.data!.docs.isEmpty) {
+                      return Text("No surveys available.");
+                    }
+
+                    return Column(
+                      children: snapshot.data!.docs.map((DocumentSnapshot doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final questions = data['questions'] ?? [];
+                        return SurveyCard(
+                          title: data['name'] ?? 'Unnamed Survey',
+                          subtitle: '${questions.length} questions',
+                          image:
+                              "assets/exam2.png", // Replace with actual image logic
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Groups Options',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      onPressed: () {},
+                      child: Row(
+                        children: [
+                          Icon(Icons.add, color: Colors.white),
+                          Text(' Create Group',
+                              style: TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      onPressed: () {},
+                      child: Row(
+                        children: [
+                          Icon(Icons.add_to_photos, color: Colors.white),
+                          Text(' Add to group',
+                              style: TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Wrap(
+                  spacing: 8.0,
+                  children: [
+                    Chip(label: Text('STAT/CS')),
+                    Chip(label: Text('Chemistry')),
+                    Chip(label: Text('Networking')),
+                  ],
+                ),
+                SizedBox(height: 20),
+              ],
             ),
-            onPressed: () {
-              Navigator.pushNamed(context, '/groupp');
-            },
-            child: Text('Your groups', style: TextStyle(color: Colors.white)),
-          ),
-          SizedBox(height: 40),
-          SurveyCard(
-              title: 'Spring Courses',
-              subtitle: 'Stat 2025',
-              image: "assets/exam3.png"),
-          SurveyCard(
-              title: 'Academic Advisors',
-              subtitle: 'Chem 2025',
-              image: 'assets/exam4.png'),
-          SurveyCard(
-              title: 'Biology Doctors',
-              subtitle: 'Bio 2025',
-              image: "assets/biotech.png"),
-          SizedBox(height: 145),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNavigationBarWidget(),
           ),
         ],
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
     );
   }
 }
@@ -102,23 +217,22 @@ class SurveyCard extends StatelessWidget {
   final String subtitle;
   final String image;
 
-  const SurveyCard(
-      {super.key,
-      required this.title,
-      required this.subtitle,
-      required this.image});
+  const SurveyCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.image,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
       child: Container(
-        height: 100,
+        height: 120,
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 2),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -138,6 +252,13 @@ class SurveyCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    SizedBox(height: 10),
+                    Flexible(
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        child: Text('View Details'),
+                      ),
                     ),
                   ],
                 ),
@@ -171,38 +292,33 @@ class BottomNavigationBarWidget extends StatelessWidget {
       height: 99,
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 2),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           BottomNavItem(
-              icon: Icons.home,
-              label: "Home",
-              isSelected: true,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/firsrforadminn');
-              }),
+            icon: Icons.home,
+            label: "Home",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.edit,
-              label: "Create Survey",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/createsurvv');
-              }),
+            icon: Icons.pie_chart,
+            label: "Survey Results",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/showsurvv');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.pie_chart,
-              label: "Survey Results",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/showsurvv');
-              }),
-          BottomNavItem(
-              icon: Icons.group,
-              label: "Groups",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/groupp');
-              }),
+            icon: Icons.group,
+            label: "Groups",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
         ],
       ),
     );
@@ -226,18 +342,20 @@ class BottomNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: isSelected ? Colors.black : Colors.grey, size: 24),
-            Text(
-              label,
-              style: TextStyle(
-                  fontSize: 10, color: isSelected ? Colors.black : Colors.grey),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: isSelected ? Colors.black : Colors.grey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.black : Colors.grey,
             ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 }

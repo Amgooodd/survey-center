@@ -1,13 +1,127 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class createsurv extends StatefulWidget {
-  const createsurv({super.key});
+class CreateSurvey extends StatefulWidget {
+  const CreateSurvey({super.key});
 
   @override
-  _createsurv createState() => _createsurv();
+  _CreateSurveyState createState() => _CreateSurveyState();
 }
 
-class _createsurv extends State<createsurv> {
+class _CreateSurveyState extends State<CreateSurvey> {
+  final TextEditingController _surveyNameController = TextEditingController();
+  List<Map<String, dynamic>> _questions = [];
+  int _questionCount = 1;
+
+  // Department-related variables
+  List<String> _departments = ['Stat', 'Math', 'CS']; // Updated department list
+
+  String? _selectedDepartment;
+
+  void _addQuestion(bool isFeedback) {
+    setState(() {
+      if (isFeedback) {
+        _questions.add({
+          'title': 'Feedback $_questionCount',
+          'type': 'feedback',
+        });
+      } else {
+        _questions.add({
+          'title': 'Question $_questionCount',
+          'type': 'multiple_choice',
+          'options': ['Yes', 'No', 'Maybe'],
+        });
+      }
+      _questionCount++;
+    });
+  }
+
+  Future<void> _addSurveyToDatabase(
+      String surveyName, List<Map<String, dynamic>> questions) async {
+    try {
+      if (_selectedDepartment == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Please select a department.")),
+        );
+        return;
+      }
+
+      // Construct the collection name based on the selected department
+      String sanitizedDepartmentName =
+          _selectedDepartment!.replaceAll(' ', '-').toLowerCase();
+      String collectionName = '$sanitizedDepartmentName-surveys';
+
+      await FirebaseFirestore.instance.collection(collectionName).add({
+        'name': surveyName,
+        'questions': questions
+            .map((q) => q['type'] == 'multiple_choice'
+                ? {
+                    'title': q['title'],
+                    'options': q['options'],
+                    'type': q['type'],
+                  }
+                : {
+                    'title': q['title'],
+                    'type': q['type'],
+                  })
+            .toList(),
+        'timestamp': FieldValue.serverTimestamp(), // Add timestamp
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Survey added successfully!")),
+      );
+    } catch (e) {
+      print("Error adding survey: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to add survey. Please try again.")),
+      );
+    }
+  }
+
+  void _finishSurvey() async {
+    final String surveyName = _surveyNameController.text.trim();
+
+    if (_selectedDepartment == null ||
+        surveyName.isEmpty ||
+        _questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              "Please enter a survey name, select a department, and add at least one question."),
+        ),
+      );
+      return;
+    }
+
+    await _addSurveyToDatabase(surveyName, _questions);
+    _surveyNameController.clear();
+    setState(() {
+      _questions = [];
+      _questionCount = 1;
+      _selectedDepartment = null;
+    });
+    Navigator.pop(context);
+  }
+
+  void _deleteOption(Map<String, dynamic> question, String option) {
+    setState(() {
+      question['options'].remove(option);
+    });
+  }
+
+  void _editOption(Map<String, dynamic> question, int index, String newValue) {
+    setState(() {
+      question['options'][index] = newValue;
+    });
+  }
+
+  void _deleteQuestion(int index) {
+    setState(() {
+      _questions.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,195 +137,212 @@ class _createsurv extends State<createsurv> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Create survey Name",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: "Enter survey name",
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Survey Name
+              Text(
+                "Create Survey Name",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              "Upload survey photo",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+              SizedBox(height: 10),
+              TextField(
+                controller: _surveyNameController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: "Enter survey name",
                 ),
               ),
-              child:
-                  Text("Browse files", style: TextStyle(color: Colors.white)),
-            ),
-            SizedBox(height: 30),
-            Text(
-              "Create survey Questions",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-            ),
-            SizedBox(height: 20),
-            Text(
-              "Question 1",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.grey[200],
-                hintText: "Enter the question ",
+
+              // Department Dropdown
+              SizedBox(height: 20),
+              Text(
+                "Select Department",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
-            ),
-            SizedBox(height: 20),
-            Column(
-              children: [
-                RadioListTile(
-                  title: Text("Yes"),
-                  value: "yes",
-                  groupValue: null,
-                  onChanged: (value) {},
+              SizedBox(height: 10),
+              InputDecorator(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
-                RadioListTile(
-                  title: Text("No"),
-                  value: "no",
-                  groupValue: null,
-                  onChanged: (value) {},
-                ),
-                RadioListTile(
-                  title: Text("Maybe"),
-                  value: "maybe",
-                  groupValue: null,
-                  onChanged: (value) {},
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedDepartment,
+                    hint: Text('Select a department'),
+                    isExpanded: true,
+                    items: _departments.map((String department) {
+                      return DropdownMenuItem<String>(
+                        value: department,
+                        child: Text(department),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedDepartment = newValue;
+                      });
+                    },
                   ),
-                  child: Text("Add Question",
-                      style: TextStyle(color: Colors.white)),
                 ),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+              ),
+
+              // Questions Section
+              SizedBox(height: 30),
+              Text(
+                "Create Survey Questions",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+              ),
+              SizedBox(height: 20),
+              ..._questions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final question = entry.value;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            question['title'],
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () => _deleteQuestion(index),
+                        ),
+                      ],
                     ),
+                    if (question['type'] == 'multiple_choice')
+                      TextField(
+                        onChanged: (value) {
+                          setState(() {
+                            question['title'] = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          hintText: "Edit the question",
+                        ),
+                      ),
+                    if (question['type'] == 'multiple_choice')
+                      Column(
+                        children: [
+                          ...question['options']
+                              .asMap()
+                              .entries
+                              .map((optionEntry) {
+                            final optionIndex = optionEntry.key;
+                            final option = optionEntry.value;
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller:
+                                        TextEditingController(text: option),
+                                    onChanged: (newValue) {
+                                      _editOption(
+                                          question, optionIndex, newValue);
+                                    },
+                                    decoration: InputDecoration(
+                                      labelText: "Option ${optionIndex + 1}",
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () {
+                                    _deleteOption(question, option);
+                                  },
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.add),
+                                onPressed: () {
+                                  setState(() {
+                                    question['options'].add('New Option');
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    if (question['type'] == 'feedback')
+                      TextField(
+                        onChanged: (value) {
+                          setState(() {
+                            question['title'] = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          hintText: "Edit the feedback question",
+                        ),
+                      ),
+                    SizedBox(height: 20),
+                  ],
+                );
+              }).toList(),
+
+              // Buttons to Add Questions and Finish Survey
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => _addQuestion(false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: Text("Add Multiple Choice Question",
+                        style: TextStyle(color: Colors.white)),
                   ),
-                  child: Text("Finish the survey",
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: BottomNavigationBarWidget(),
-            )
-          ],
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () => _addQuestion(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: Text("Add Feedback Question",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: _finishSurvey,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: Text("Finish the survey",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
-}
-
-class BottomNavigationBarWidget extends StatelessWidget {
-  const BottomNavigationBarWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 99,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 2),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          BottomNavItem(
-              icon: Icons.home,
-              label: "Home",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/firsrforadminn');
-              }),
-          BottomNavItem(
-              icon: Icons.edit,
-              label: "Create Survey",
-              isSelected: true,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/createsurvv');
-              }),
-          BottomNavItem(
-              icon: Icons.pie_chart,
-              label: "Survey Results",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/showsurvv');
-              }),
-          BottomNavItem(
-              icon: Icons.group,
-              label: "Groups",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/groupp');
-              }),
-        ],
-      ),
-    );
-  }
-}
-
-class BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback? onTap;
-
-  const BottomNavItem({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.isSelected = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: isSelected ? Colors.black : Colors.grey, size: 24),
-            Text(
-              label,
-              style: TextStyle(
-                  fontSize: 10, color: isSelected ? Colors.black : Colors.grey),
-            ),
-          ],
-        ));
   }
 }
