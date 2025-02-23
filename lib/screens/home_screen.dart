@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,6 +36,13 @@ class HomeScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.pushNamed(context, '/adminlogin');
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   child: Column(
                     children: [
                       Image.asset('assets/images/admin.png', height: 100),
@@ -41,6 +50,11 @@ class HomeScreen extends StatelessWidget {
                       Text("Admin", style: TextStyle(fontSize: 18)),
                     ],
                   ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/studentlogin');
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
@@ -48,12 +62,6 @@ class HomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                  
-                    Navigator.pushNamed(context, '/studentlogin');
-                  },
                   child: Column(
                     children: [
                       Image.asset('assets/images/student_icon.png',
@@ -61,13 +69,6 @@ class HomeScreen extends StatelessWidget {
                       SizedBox(height: 8),
                       Text("Student", style: TextStyle(fontSize: 18)),
                     ],
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                   ),
                 ),
               ],
