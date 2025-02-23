@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StudentLogin extends StatefulWidget {
+  const StudentLogin({super.key});
+
   @override
   _StudentLoginState createState() => _StudentLoginState();
 }
@@ -23,7 +25,7 @@ class _StudentLoginState extends State<StudentLogin> {
         await FirebaseFirestore.instance.collection('students').doc(id).get();
     if (snapshot.exists) {
       // Redirect to the welcome screen if the ID is valid
-      Navigator.pushReplacementNamed(context, '/welcome', arguments: id);
+      Navigator.pushReplacementNamed(context, '/studentformm', arguments: id);
     } else {
       // Show an error message if the ID is invalid
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,12 +62,12 @@ class _StudentLoginState extends State<StudentLogin> {
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _validateStudentId,
-              child: Text("Submit", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child: Text("Submit", style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
