@@ -12,11 +12,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final TextEditingController _studentNameController = TextEditingController();
   String? _selectedDepartment;
   List<String> departments = [
-    'Computer Science',
-    'Statistic',
-    'Chemistry',
-    'Biology',
-    'Physics'
+    'CS',
+    'Stat',
+    'Math',
+   
   ];
 
   Future<void> _addStudentToDatabase() async {

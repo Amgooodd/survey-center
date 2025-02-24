@@ -9,9 +9,10 @@ import '../screens/admin_login.dart';
 import '../screens/1firstforadmin.dart';
 import '../screens/2createsurv.dart';
 import '../screens/3showsurv.dart';
-import '../screens/4group.dart';
-import '../screens/5uploaddata.dart';
+import '../groups/4group.dart';
+import '../groups/firstUploadData.dart';
 import '../screens/6firstforstudent.dart';
+import '../groups/secondUploadData.dart';
 
 
 class AppRoutes {
@@ -24,13 +25,15 @@ class AppRoutes {
     '/firsrforadminn': (context) => FirstForAdmin(),
     '/createsurvv': (context) => CreateSurvey(),
     '/showsurvv': (context) => showsurv(),
-    '/groupp': (context) => group(),
-    '/uploaddataa': (context) => uploaddata(),
+    '/groupp': (context) => Group(),
+   
     '/studentformm': (context) => studentform(),
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => StudentLogin(),
-
+     '/statcs': (context) => StatCsUploadData(),
+      '/chemistry' : (context) => chemUploadData(),
+     
     
   };
 }

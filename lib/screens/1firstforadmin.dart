@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -36,7 +38,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
 
   void _clearFilter(String department) {
     setState(() {
-      _selectedDepartments.remove(department); // Remove specific department
+      _selectedDepartments.remove(department);
     });
   }
 
@@ -326,6 +328,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     );
   }
 }
+
 class SurveyCard extends StatelessWidget {
   final String title;
   final String subtitle;
