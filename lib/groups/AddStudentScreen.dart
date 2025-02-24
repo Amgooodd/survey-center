@@ -17,8 +17,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   final Map<String, String> groupNameMap = {
     'STAT/CS': 'STAT / CS',
-    'chemistry': 'chemistry',
-    
+    'Math/CS': 'Math/CS',
   };
 
   Future<void> _addStudentToDatabase(String groupId) async {
@@ -29,7 +28,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     final String studentId = _studentIdController.text.trim();
     final String studentName = _studentNameController.text.trim();
 
-    
     if (studentId.length != 14) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Student ID must be exactly 14 digits long.")),
@@ -42,7 +40,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
     if (studentId.isNotEmpty && studentName.isNotEmpty) {
       try {
-        
         final docSnapshot = await FirebaseFirestore.instance
             .collection('students')
             .doc(studentId)
@@ -68,7 +65,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           );
           _studentIdController.clear();
           _studentNameController.clear();
-          Navigator.pop(context); 
+          Navigator.pop(context);
         }
       } catch (e) {
         print("Error adding student: $e");

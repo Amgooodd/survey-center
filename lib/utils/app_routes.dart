@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../screens/splash_screen.dart';
 import '../screens/first_image_screen.dart';
 import '../screens/home_screen.dart';
-import '../screens/admin_dashboard.dart';
 import '../screens/welcome_screen.dart';
 import '../screens/student_login.dart';
 import '../screens/admin_login.dart';
@@ -14,26 +13,21 @@ import '../groups/firstUploadData.dart';
 import '../screens/6firstforstudent.dart';
 import '../groups/secondUploadData.dart';
 
-
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     '/': (context) => SplashScreen(),
     '/first': (context) => FirstImageScreen(),
     '/home': (context) => HomeScreen(),
     '/adminlogin': (context) => AdminLogin(),
-    '/admin_dashboard': (context) => AdminDashboard(),
     '/firsrforadminn': (context) => FirstForAdmin(),
     '/createsurvv': (context) => CreateSurvey(),
     '/showsurvv': (context) => showsurv(),
     '/groupp': (context) => Group(),
-   
     '/studentformm': (context) => studentform(),
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => StudentLogin(),
-     '/statcs': (context) => StatCsUploadData(),
-      '/chemistry' : (context) => chemUploadData(),
-     
-    
+    '/statcs': (context) => StatCsUploadData(),
+    '/mathcs': (context) => mathcsUploadDataState(),
   };
 }

@@ -42,26 +42,13 @@ class _Group extends State<Group> {
                       },
                     ),
                     SubjectCard(
-                      title: "Chemistry",
-                      image: "assets/chemistry.png",
-                      onTap: () {
-                        Navigator.pushNamed(context, '/chemistry');
-                      },
-                    ),
-                    SubjectCard(
                       title: "Math/CS",
                       image: "assets/math.png",
                       onTap: () {
                         Navigator.pushNamed(context, '/mathcs');
                       },
                     ),
-                    SubjectCard(
-                      title: "Biotechnology",
-                      image: "assets/biotech.png",
-                      onTap: () {
-                        Navigator.pushNamed(context, '/biotech');
-                      },
-                    ),
+    
                   ],
                 ),
               ),
@@ -120,6 +107,7 @@ class SubjectCard extends StatelessWidget {
     );
   }
 }
+
 class BottomNavigationBarWidget extends StatelessWidget {
   const BottomNavigationBarWidget({super.key});
 

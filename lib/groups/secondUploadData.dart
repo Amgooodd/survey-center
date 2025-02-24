@@ -1,38 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'FirstAddStudentScreen.dart';
+import 'AddStudentScreen.dart';
 
-class chemUploadData extends StatefulWidget {
-  const chemUploadData({super.key});
+class mathcsUploadDataState extends StatefulWidget {
+  const mathcsUploadDataState({super.key});
 
   @override
-  _chemUploadDataState createState() => _chemUploadDataState();
+  _mathcsUploadDataState createState() => _mathcsUploadDataState();
 }
 
-class _chemUploadDataState extends State<chemUploadData> {
+class _mathcsUploadDataState extends State<mathcsUploadDataState> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("chemistry"),
+        title: Text("Math/CS"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Image.asset(
-                'assets/chemistry.png'), 
+            Image.asset('assets/math.png'),
             SizedBox(height: 10),
             Text(
-              "List of chemistry students",
+              "List of Math/CS students",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('students')
-                  .where('group', isEqualTo: 'chemistry')
+                  .where('group', isEqualTo: 'Math/CS')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -54,7 +53,7 @@ class _chemUploadDataState extends State<chemUploadData> {
                       return StudentCard(
                         studentId: studentId,
                         studentName: studentName,
-                        groupId: 'chemistry',
+                        groupId: 'Math/CS',
                         onEdit: () {
                           Navigator.push(
                             context,
@@ -62,10 +61,16 @@ class _chemUploadDataState extends State<chemUploadData> {
                               builder: (context) => EditStudentScreen(
                                 studentId: studentId,
                                 studentName: studentName,
-                                groupId: 'chemistry',
+                                groupId: 'Math/CS',
                               ),
                             ),
                           );
+                        },
+                        onDelete: () async {
+                          await FirebaseFirestore.instance
+                              .collection('students')
+                              .doc(studentId)
+                              .delete();
                         },
                       );
                     },
@@ -80,7 +85,7 @@ class _chemUploadDataState extends State<chemUploadData> {
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          AddStudentScreen(groupId: 'chemistry')),
+                          AddStudentScreen(groupId: 'Math/CS')),
                 );
               },
               child: Row(
@@ -110,12 +115,14 @@ class StudentCard extends StatelessWidget {
   final String studentName;
   final String groupId;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const StudentCard({
     required this.studentId,
     required this.studentName,
     required this.groupId,
     required this.onEdit,
+    required this.onDelete,
     super.key,
   });
 
@@ -127,9 +134,18 @@ class StudentCard extends StatelessWidget {
         leading: Icon(Icons.person),
         title: Text(studentName),
         subtitle: Text("ID: $studentId"),
-        trailing: IconButton(
-          icon: Icon(Icons.edit),
-          onPressed: onEdit,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: onEdit,
+            ),
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: onDelete,
+            ),
+          ],
         ),
       ),
     );
@@ -169,7 +185,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
     if (newStudentId.isNotEmpty && newStudentName.isNotEmpty) {
       try {
-        
         await FirebaseFirestore.instance
             .collection('students')
             .doc(widget.studentId)
@@ -177,7 +192,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           'name': newStudentName,
         });
 
-        
         if (newStudentId != widget.studentId) {
           await FirebaseFirestore.instance
               .collection('students')
@@ -196,7 +210,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Student updated successfully!")),
         );
-        Navigator.pop(context); 
+        Navigator.pop(context);
       } catch (e) {
         print("Error updating student: $e");
         ScaffoldMessenger.of(context).showSnackBar(

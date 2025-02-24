@@ -1,7 +1,9 @@
-// ignore_for_file: unused_element
+
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'vewdetails.dart';
 
 class FirstForAdmin extends StatefulWidget {
   const FirstForAdmin({super.key});
@@ -14,7 +16,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
   late Stream<List<DocumentSnapshot>> _surveysStream;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  Set<String> _selectedDepartments = {}; // Multi-select departments
+  Set<String> _selectedDepartments = {}; 
 
   final List<String> _departments = ['CS', 'Stat', 'Math'];
 
@@ -57,15 +59,15 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                 onChanged: (value) {
                   setState(() {
                     if (value!) {
-                      _selectedDepartments.add(department); // Add department
+                      _selectedDepartments.add(department); 
                     } else {
                       _selectedDepartments
-                          .remove(department); // Remove department
+                          .remove(department); 
                     }
                   });
-                  Navigator.pop(context); // Close dialog after selection
+                  Navigator.pop(context); 
                   _showFilterOptions(
-                      context); // Reopen dialog to reflect changes
+                      context); 
                 },
               );
             }).toList(),
@@ -73,7 +75,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); 
               },
               child: Text('Done'),
             ),
@@ -122,7 +124,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                     ),
                     SizedBox(width: 10),
                     PopupMenuButton<String>(
-                      icon: Icon(Icons.filter_list), // Filter icon
+                      icon: Icon(Icons.filter_list), 
                       itemBuilder: (context) => _departments.map((department) {
                         return PopupMenuItem<String>(
                           value: department,
@@ -135,13 +137,13 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                                   setState(() {
                                     if (value!) {
                                       _selectedDepartments
-                                          .add(department); // Add department
+                                          .add(department); 
                                     } else {
                                       _selectedDepartments.remove(
-                                          department); // Remove department
+                                          department); 
                                     }
                                   });
-                                  Navigator.pop(context); // Close popup menu
+                                  Navigator.pop(context); 
                                 },
                               ),
                               Text(department),
@@ -162,7 +164,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                           label: Text(department),
                           deleteIcon: Icon(Icons.close, size: 16),
                           onDeleted: () =>
-                              _clearFilter(department), // Clear specific filter
+                              _clearFilter(department), 
                         );
                       }).toList(),
                     ),
@@ -186,32 +188,13 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                       ),
                       onPressed: () async {
                         await Navigator.pushNamed(context, '/createsurvv');
-                        _refreshSurveys(); // Refresh surveys after creating
+                        _refreshSurveys(); 
                       },
                       child: Row(
                         children: [
                           Icon(Icons.add, color: Colors.white),
                           Text(' Create Survey',
                               style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/showsurvv');
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, color: Colors.black),
-                          Text(' Edit Survey',
-                              style: TextStyle(color: Colors.black)),
                         ],
                       ),
                     ),
@@ -312,6 +295,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                               departments: departments,
                               image: "assets/exam2.png",
                               createdAt: formattedTime,
+                              survey: doc,
                             );
                           }).toList(),
                         );
@@ -335,6 +319,7 @@ class SurveyCard extends StatelessWidget {
   final String departments;
   final String image;
   final String createdAt;
+  final DocumentSnapshot survey;
 
   const SurveyCard({
     super.key,
@@ -343,6 +328,7 @@ class SurveyCard extends StatelessWidget {
     required this.departments,
     required this.image,
     required this.createdAt,
+    required this.survey,
   });
 
   @override
@@ -385,7 +371,16 @@ class SurveyCard extends StatelessWidget {
                     SizedBox(height: 10),
                     Flexible(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SurveyDetailsScreen(survey: survey),
+                            ),
+                          );
+                        },
                         child: Text('View Details'),
                       ),
                     ),
