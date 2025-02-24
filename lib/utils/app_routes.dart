@@ -13,6 +13,7 @@ import '../screens/4group.dart';
 import '../screens/5uploaddata.dart';
 import '../screens/6firstforstudent.dart';
 
+
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     '/': (context) => SplashScreen(),
@@ -29,5 +30,7 @@ class AppRoutes {
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => StudentLogin(),
+
+    
   };
 }

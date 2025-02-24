@@ -13,10 +13,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
   List<Map<String, dynamic>> _questions = [];
   int _questionCount = 1;
 
-  // Department-related variables
-  List<String> _departments = ['Stat', 'Math', 'CS']; // Updated department list
-
-  String? _selectedDepartment;
+  List<String> _departments = ['Stat', 'Math', 'CS'];
+  List<String> _selectedDepartments = [];
 
   void _addQuestion(bool isFeedback) {
     setState(() {
@@ -39,19 +37,14 @@ class _CreateSurveyState extends State<CreateSurvey> {
   Future<void> _addSurveyToDatabase(
       String surveyName, List<Map<String, dynamic>> questions) async {
     try {
-      if (_selectedDepartment == null) {
+      if (_selectedDepartments.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Please select a department.")),
+          SnackBar(content: Text("Please select at least one department.")),
         );
         return;
       }
 
-      // Construct the collection name based on the selected department
-      String sanitizedDepartmentName =
-          _selectedDepartment!.replaceAll(' ', '-').toLowerCase();
-      String collectionName = '$sanitizedDepartmentName-surveys';
-
-      await FirebaseFirestore.instance.collection(collectionName).add({
+      await FirebaseFirestore.instance.collection('surveys').add({
         'name': surveyName,
         'questions': questions
             .map((q) => q['type'] == 'multiple_choice'
@@ -65,7 +58,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
                     'type': q['type'],
                   })
             .toList(),
-        'timestamp': FieldValue.serverTimestamp(), // Add timestamp
+        'timestamp': FieldValue.serverTimestamp(),
+        'departments': _selectedDepartments,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,13 +76,13 @@ class _CreateSurveyState extends State<CreateSurvey> {
   void _finishSurvey() async {
     final String surveyName = _surveyNameController.text.trim();
 
-    if (_selectedDepartment == null ||
+    if (_selectedDepartments.isEmpty ||
         surveyName.isEmpty ||
         _questions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              "Please enter a survey name, select a department, and add at least one question."),
+              "Please enter a survey name, select at least one department, and add at least one question."),
         ),
       );
       return;
@@ -99,27 +93,9 @@ class _CreateSurveyState extends State<CreateSurvey> {
     setState(() {
       _questions = [];
       _questionCount = 1;
-      _selectedDepartment = null;
+      _selectedDepartments = [];
     });
     Navigator.pop(context);
-  }
-
-  void _deleteOption(Map<String, dynamic> question, String option) {
-    setState(() {
-      question['options'].remove(option);
-    });
-  }
-
-  void _editOption(Map<String, dynamic> question, int index, String newValue) {
-    setState(() {
-      question['options'][index] = newValue;
-    });
-  }
-
-  void _deleteQuestion(int index) {
-    setState(() {
-      _questions.removeAt(index);
-    });
   }
 
   @override
@@ -127,10 +103,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
-          "Create Survey",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-        ),
+        title: Text("Create Survey"),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 3,
@@ -141,7 +114,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Survey Name
               Text(
                 "Create Survey Name",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
@@ -154,41 +126,30 @@ class _CreateSurveyState extends State<CreateSurvey> {
                   hintText: "Enter survey name",
                 ),
               ),
-
-              // Department Dropdown
               SizedBox(height: 20),
               Text(
-                "Select Department",
+                "Select Departments",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
               SizedBox(height: 10),
-              InputDecorator(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedDepartment,
-                    hint: Text('Select a department'),
-                    isExpanded: true,
-                    items: _departments.map((String department) {
-                      return DropdownMenuItem<String>(
-                        value: department,
-                        child: Text(department),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
+              Wrap(
+                spacing: 10,
+                children: _departments.map((department) {
+                  return FilterChip(
+                    label: Text(department),
+                    selected: _selectedDepartments.contains(department),
+                    onSelected: (isSelected) {
                       setState(() {
-                        _selectedDepartment = newValue;
+                        if (isSelected) {
+                          _selectedDepartments.add(department);
+                        } else {
+                          _selectedDepartments.remove(department);
+                        }
                       });
                     },
-                  ),
-                ),
+                  );
+                }).toList(),
               ),
-
-              // Questions Section
               SizedBox(height: 30),
               Text(
                 "Create Survey Questions",
@@ -297,45 +258,22 @@ class _CreateSurveyState extends State<CreateSurvey> {
                   ],
                 );
               }).toList(),
-
-              // Buttons to Add Questions and Finish Survey
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ElevatedButton(
                     onPressed: () => _addQuestion(false),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    child: Text("Add Multiple Choice Question",
-                        style: TextStyle(color: Colors.white)),
+                    child: Text("Add Multiple Choice Question"),
                   ),
                   SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () => _addQuestion(true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    child: Text("Add Feedback Question",
-                        style: TextStyle(color: Colors.white)),
+                    child: Text("Add Feedback Question"),
                   ),
                   SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: _finishSurvey,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    child: Text("Finish the survey",
-                        style: TextStyle(color: Colors.white)),
+                    child: Text("Finish the survey"),
                   ),
                 ],
               ),
@@ -344,5 +282,23 @@ class _CreateSurveyState extends State<CreateSurvey> {
         ),
       ),
     );
+  }
+
+  void _deleteOption(Map<String, dynamic> question, String option) {
+    setState(() {
+      question['options'].remove(option);
+    });
+  }
+
+  void _editOption(Map<String, dynamic> question, int index, String newValue) {
+    setState(() {
+      question['options'][index] = newValue;
+    });
+  }
+
+  void _deleteQuestion(int index) {
+    setState(() {
+      _questions.removeAt(index);
+    });
   }
 }

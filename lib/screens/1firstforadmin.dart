@@ -9,14 +9,76 @@ class FirstForAdmin extends StatefulWidget {
 }
 
 class _FirstForAdminState extends State<FirstForAdmin> {
-  late Stream<QuerySnapshot> _surveysStream;
+  late Stream<List<DocumentSnapshot>> _surveysStream;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  Set<String> _selectedDepartments = {}; // Multi-select departments
+
+  final List<String> _departments = ['CS', 'Stat', 'Math'];
 
   @override
   void initState() {
     super.initState();
-    // Initialize the stream to fetch surveys from Firestore
-    _surveysStream =
-        FirebaseFirestore.instance.collection('surveys').snapshots();
+    _surveysStream = FirebaseFirestore.instance
+        .collection('surveys')
+        .snapshots()
+        .map((snapshot) => snapshot.docs);
+  }
+
+  void _refreshSurveys() {
+    setState(() {
+      _surveysStream = FirebaseFirestore.instance
+          .collection('surveys')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+    });
+  }
+
+  void _clearFilter(String department) {
+    setState(() {
+      _selectedDepartments.remove(department); // Remove specific department
+    });
+  }
+
+  void _showFilterOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Filter by Departments'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _departments.map((department) {
+              return CheckboxListTile(
+                title: Text(department),
+                value: _selectedDepartments.contains(department),
+                onChanged: (value) {
+                  setState(() {
+                    if (value!) {
+                      _selectedDepartments.add(department); // Add department
+                    } else {
+                      _selectedDepartments
+                          .remove(department); // Remove department
+                    }
+                  });
+                  Navigator.pop(context); // Close dialog after selection
+                  _showFilterOptions(
+                      context); // Reopen dialog to reflect changes
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+              },
+              child: Text('Done'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -37,15 +99,72 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
-                TextField(
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Search surveys...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.search),
+                          hintText: 'Search surveys...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.filter_list), // Filter icon
+                      itemBuilder: (context) => _departments.map((department) {
+                        return PopupMenuItem<String>(
+                          value: department,
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value:
+                                    _selectedDepartments.contains(department),
+                                onChanged: (value) {
+                                  setState(() {
+                                    if (value!) {
+                                      _selectedDepartments
+                                          .add(department); // Add department
+                                    } else {
+                                      _selectedDepartments.remove(
+                                          department); // Remove department
+                                    }
+                                  });
+                                  Navigator.pop(context); // Close popup menu
+                                },
+                              ),
+                              Text(department),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                if (_selectedDepartments.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Wrap(
+                      spacing: 8.0,
+                      children: _selectedDepartments.map((department) {
+                        return Chip(
+                          label: Text(department),
+                          deleteIcon: Icon(Icons.close, size: 16),
+                          onDeleted: () =>
+                              _clearFilter(department), // Clear specific filter
+                        );
+                      }).toList(),
                     ),
                   ),
-                ),
                 SizedBox(height: 20),
                 Text(
                   'Create a New Survey',
@@ -63,8 +182,9 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/createsurvv');
+                      onPressed: () async {
+                        await Navigator.pushNamed(context, '/createsurvv');
+                        _refreshSurveys(); // Refresh surveys after creating
                       },
                       child: Row(
                         children: [
@@ -120,88 +240,83 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
-                StreamBuilder<QuerySnapshot>(
-                  stream: _surveysStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Text('Something went wrong');
-                    }
+                Container(
+                  height: 300,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: StreamBuilder<List<DocumentSnapshot>>(
+                      stream: _surveysStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        }
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
 
-                    if (snapshot.data!.docs.isEmpty) {
-                      return Text("No surveys available.");
-                    }
+                        if (snapshot.data == null || snapshot.data!.isEmpty) {
+                          return Center(child: Text("No surveys available."));
+                        }
 
-                    return Column(
-                      children: snapshot.data!.docs.map((DocumentSnapshot doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final questions = data['questions'] ?? [];
-                        return SurveyCard(
-                          title: data['name'] ?? 'Unnamed Survey',
-                          subtitle: '${questions.length} questions',
-                          image:
-                              "assets/exam2.png", // Replace with actual image logic
+                        final filteredSurveys = snapshot.data!.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final name =
+                              data['name']?.toString().toLowerCase() ?? '';
+                          final departments =
+                              (data['departments'] as List<dynamic>?)
+                                      ?.map((d) => d.toString().toLowerCase())
+                                      .toSet() ??
+                                  {};
+                          return name.contains(_searchQuery) &&
+                              (_selectedDepartments.isEmpty ||
+                                  _selectedDepartments.every((dep) =>
+                                      departments.contains(dep.toLowerCase())));
+                        }).toList();
+
+                        filteredSurveys.sort((a, b) {
+                          final aData = a.data() as Map<String, dynamic>;
+                          final bData = b.data() as Map<String, dynamic>;
+                          final aTimestamp = aData['timestamp'] as Timestamp?;
+                          final bTimestamp = bData['timestamp'] as Timestamp?;
+                          if (aTimestamp == null || bTimestamp == null) {
+                            return 0;
+                          }
+                          return bTimestamp.compareTo(aTimestamp);
+                        });
+
+                        return Column(
+                          children: filteredSurveys.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final questions = data['questions'] ?? [];
+                            final departments =
+                                (data['departments'] as List<dynamic>?)
+                                        ?.map((d) => d.toString())
+                                        .join(', ') ??
+                                    'Unknown Departments';
+                            final timestamp = data['timestamp'] as Timestamp?;
+                            final formattedTime = timestamp != null
+                                ? '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}'
+                                : 'N/A';
+
+                            return SurveyCard(
+                              title: data['name'] ?? 'Unnamed Survey',
+                              subtitle: '${questions.length} questions',
+                              departments: departments,
+                              image: "assets/exam2.png",
+                              createdAt: formattedTime,
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
-                    );
-                  },
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Groups Options',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      onPressed: () {},
-                      child: Row(
-                        children: [
-                          Icon(Icons.add, color: Colors.white),
-                          Text(' Create Group',
-                              style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
+                      },
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      onPressed: () {},
-                      child: Row(
-                        children: [
-                          Icon(Icons.add_to_photos, color: Colors.white),
-                          Text(' Add to group',
-                              style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                SizedBox(height: 10),
-                Wrap(
-                  spacing: 8.0,
-                  children: [
-                    Chip(label: Text('STAT/CS')),
-                    Chip(label: Text('Chemistry')),
-                    Chip(label: Text('Networking')),
-                  ],
-                ),
-                SizedBox(height: 20),
               ],
             ),
           ),
@@ -211,17 +326,20 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     );
   }
 }
-
 class SurveyCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String departments;
   final String image;
+  final String createdAt;
 
   const SurveyCard({
     super.key,
     required this.title,
     required this.subtitle,
+    required this.departments,
     required this.image,
+    required this.createdAt,
   });
 
   @override
@@ -229,7 +347,7 @@ class SurveyCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
       child: Container(
-        height: 120,
+        height: 140,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
@@ -251,6 +369,14 @@ class SurveyCard extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      'Departments: $departments',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      'Created: $createdAt',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     SizedBox(height: 10),
@@ -317,6 +443,13 @@ class BottomNavigationBarWidget extends StatelessWidget {
             label: "Groups",
             onTap: () {
               Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.navigate_next,
+            label: "Add Student",
+            onTap: () {
+              Navigator.pushNamed(context, '/admin_dashboard');
             },
           ),
         ],
