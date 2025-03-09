@@ -1,37 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'AddStudentScreen.dart';
+import 'package:student_questionnaire/groups/AddStudentScreen.dart';
 
-class StatCsUploadData extends StatefulWidget {
-  const StatCsUploadData({super.key});
+class GroupDetailsScreen extends StatefulWidget {
+  final String groupId; 
+  const GroupDetailsScreen({required this.groupId, super.key});
 
   @override
-  _StatCsUploadDataState createState() => _StatCsUploadDataState();
+  _GroupDetailsScreenState createState() => _GroupDetailsScreenState();
 }
 
-class _StatCsUploadDataState extends State<StatCsUploadData> {
+class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("STAT / CS"),
+        title: Text(widget.groupId), 
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Image.asset('assets/statistics.png'),
+            Image.asset(
+                'assets/${widget.groupId.toLowerCase().replaceAll("/", "_")}.png'), 
             SizedBox(height: 10),
             Text(
-              "List of STAT / CS students",
+              "List of ${widget.groupId} students",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('students')
-                  .where('group', isEqualTo: 'STAT/CS')
+                  .where('group',
+                      isEqualTo: widget.groupId) 
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -53,7 +56,7 @@ class _StatCsUploadDataState extends State<StatCsUploadData> {
                       return StudentCard(
                         studentId: studentId,
                         studentName: studentName,
-                        groupId: 'STAT/CS',
+                        groupId: widget.groupId,
                         onEdit: () {
                           Navigator.push(
                             context,
@@ -61,7 +64,7 @@ class _StatCsUploadDataState extends State<StatCsUploadData> {
                               builder: (context) => EditStudentScreen(
                                 studentId: studentId,
                                 studentName: studentName,
-                                groupId: 'STAT/CS',
+                                groupId: widget.groupId,
                               ),
                             ),
                           );
@@ -84,8 +87,9 @@ class _StatCsUploadDataState extends State<StatCsUploadData> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) =>
-                          AddStudentScreen(groupId: 'STAT/CS')),
+                    builder: (context) => AddStudentScreen(
+                        groupId: widget.groupId), 
+                  ),
                 );
               },
               child: Row(

@@ -36,19 +36,37 @@ class _Group extends State<Group> {
                   children: [
                     SubjectCard(
                       title: "STAT/CS",
-                      image: "assets/statistics.png",
+                      image: "assets/stat_cs.png",
                       onTap: () {
-                        Navigator.pushNamed(context, '/statcs');
+                        Navigator.pushNamed(
+                          context,
+                          '/groupDetails',
+                          arguments: "STAT/CS", 
+                        );
                       },
                     ),
                     SubjectCard(
                       title: "Math/CS",
-                      image: "assets/math.png",
+                      image: "assets/math_cs.png",
                       onTap: () {
-                        Navigator.pushNamed(context, '/mathcs');
+                        Navigator.pushNamed(
+                          context,
+                          '/groupDetails',
+                          arguments: "Math/CS", 
+                        );
                       },
                     ),
-    
+                    SubjectCard(
+                      title: "Chemistry",
+                      image: "assets/chemistry.png",
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/groupDetails',
+                          arguments: "Chemistry", 
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

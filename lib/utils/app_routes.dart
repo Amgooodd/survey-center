@@ -9,9 +9,9 @@ import '../screens/1firstforadmin.dart';
 import '../screens/2createsurv.dart';
 import '../screens/3showsurv.dart';
 import '../groups/4group.dart';
-import '../groups/firstUploadData.dart';
+import '../groups/UploadData.dart';
 import '../screens/6firstforstudent.dart';
-import '../groups/secondUploadData.dart';
+
 
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
@@ -27,7 +27,11 @@ class AppRoutes {
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => StudentLogin(),
-    '/statcs': (context) => StatCsUploadData(),
-    '/mathcs': (context) => mathcsUploadDataState(),
+   
+  
+     // ignore: equal_keys_in_map
+     '/groupp': (context) => Group(), 
+        '/groupDetails': (context) => GroupDetailsScreen(
+              groupId: ModalRoute.of(context)!.settings.arguments as String,)
   };
 }
