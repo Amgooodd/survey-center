@@ -83,3 +83,7 @@ coverage/
 .atom/
 .swiftpm/
 migrate_working_dir/
+android/app/.cxx/Debug/6g1n3d4b/x86_64/configure_fingerprint.bin
+android/app/.cxx/Debug/6g1n3d4b/x86/configure_fingerprint.bin
+android/app/.cxx/Debug/6g1n3d4b/armeabi-v7a/configure_fingerprint.bin
+android/app/.cxx/Debug/6g1n3d4b/arm64-v8a/configure_fingerprint.bin
