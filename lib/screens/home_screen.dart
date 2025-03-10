@@ -8,27 +8,31 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Home", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               "Choose who are you",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             SizedBox(height: 8),
             Text(
               "Help us determine which interface is right for you",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 15, color: Colors.black),
             ),
-            SizedBox(height: 32),
+            SizedBox(height: 50),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -37,7 +41,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/adminlogin');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: Color.fromARGB(255, 28, 51, 95),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -45,9 +49,12 @@ class HomeScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Image.asset('assets/images/admin.png', height: 100),
-                      SizedBox(height: 8),
-                      Text("Admin", style: TextStyle(fontSize: 18)),
+                      SizedBox(height: 20),
+                      Image.asset('assets/images/whadmin.png', height: 100),
+                      SizedBox(height: 10),
+                      Text("Admin",
+                          style: TextStyle(fontSize: 18, color: Colors.white)),
+                      SizedBox(height: 10),
                     ],
                   ),
                 ),
@@ -56,7 +63,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/studentlogin');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: Color.fromARGB(255, 28, 51, 95),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -64,10 +71,12 @@ class HomeScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Image.asset('assets/images/student_icon.png',
-                          height: 100),
-                      SizedBox(height: 8),
-                      Text("Student", style: TextStyle(fontSize: 18)),
+                      SizedBox(height: 20),
+                      Image.asset('assets/images/whstudent.png', height: 100),
+                      SizedBox(height: 10),
+                      Text("Student",
+                          style: TextStyle(fontSize: 18, color: Colors.white)),
+                      SizedBox(height: 10),
                     ],
                   ),
                 ),
