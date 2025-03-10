@@ -53,15 +53,9 @@ class _showsurv extends State<showsurv> {
             onPressed: () {},
             child: Text('download data', style: TextStyle(color: Colors.white)),
           ),
-          SizedBox(height: 100),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNavigationBarWidget(),
-          ),
         ],
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
     );
   }
 }
@@ -124,41 +118,43 @@ class BottomNavigationBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 99,
+      height: 80,
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 2),
-        ],
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           BottomNavItem(
-              icon: Icons.home,
-              label: "Home",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/firsrforadminn');
-              }),
+            icon: Icons.home,
+            label: "Home",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.edit,
-              label: "Create Survey",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/createsurvv');
-              }),
+            icon: Icons.edit,
+            label: "Create Survey",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/createsurvv');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.pie_chart,
-              label: "Survey Results",
-              isSelected: true,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/showsurvv');
-              }),
+            icon: Icons.group,
+            label: "Groups",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.group,
-              label: "Groups",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/groupp');
-              }),
+            icon: Icons.navigate_next,
+            label: "Add Student",
+            onTap: () {
+              Navigator.pushNamed(context, '/admin_dashboard');
+            },
+          ),
         ],
       ),
     );
@@ -182,18 +178,21 @@ class BottomNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: isSelected ? Colors.black : Colors.grey, size: 24),
-            Text(
-              label,
-              style: TextStyle(
-                  fontSize: 10, color: isSelected ? Colors.black : Colors.grey),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
             ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 }
