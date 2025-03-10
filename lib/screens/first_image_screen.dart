@@ -2,29 +2,32 @@ import 'package:flutter/material.dart';
 import '../widgets/animated_button.dart';
 
 class FirstImageScreen extends StatelessWidget {
+  const FirstImageScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/wllppr.png', // Replace with your image path
+              fit: BoxFit.cover,
+            ),
+          ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/first_image.png', 
-                  width: 100, 
-                  height: 100, 
-                ),
-                SizedBox(height: 20),
+                SizedBox(height: 400),
                 Text(
-                  'Survey Center',
+                  'Survey Genie',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 28, 51, 95),
                   ),
                 ),
                 SizedBox(height: 5),
@@ -32,9 +35,9 @@ class FirstImageScreen extends StatelessWidget {
                   'Join us to begin your survey journey today!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.normal,
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 28, 51, 95),
                   ),
                 ),
               ],
@@ -49,9 +52,8 @@ class FirstImageScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushNamed(context, '/home');
               },
-              backgroundColor: Colors.white,
-              textColor: Colors
-                  .black, 
+              backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+              textColor: Colors.white,
             ),
           ),
         ],
