@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class SurveyDetailsScreen extends StatefulWidget {
   final DocumentSnapshot survey;
 
-  const SurveyDetailsScreen({Key? key, required this.survey}) : super(key: key);
+  const SurveyDetailsScreen({super.key, required this.survey});
 
   @override
   _SurveyDetailsScreenState createState() => _SurveyDetailsScreenState();
@@ -16,7 +16,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
         .collection('surveys')
         .doc(widget.survey.id)
         .delete();
-    Navigator.pop(context); 
+    Navigator.pop(context);
   }
 
   void _showDeleteConfirmation() {
@@ -33,7 +33,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(dialogContext); 
+                Navigator.pop(dialogContext);
                 await _deleteSurvey();
               },
               child: Text('Yes'),
@@ -128,7 +128,6 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                     'options': updatedOptions,
                   };
 
-                  
                   await FirebaseFirestore.instance
                       .collection('surveys')
                       .doc(widget.survey.id)
@@ -166,7 +165,6 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
     TextEditingController questionController = TextEditingController();
     List<TextEditingController> optionControllers = [];
     if (type == 'multiple_choice') {
-      
       optionControllers =
           List.generate(3, (index) => TextEditingController(text: ''));
     }
@@ -209,7 +207,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                           ),
                         ],
                       );
-                    }).toList(),
+                    }),
                     Row(
                       children: [
                         IconButton(
@@ -323,7 +321,14 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(data['name'] ?? 'Unnamed Survey'),
+            title: Text(data['name'] ?? 'Unnamed Survey',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -383,8 +388,8 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            child: Icon(Icons.add),
             onPressed: _showAddQuestionTypeDialog,
+            child: Icon(Icons.add),
           ),
         );
       },
