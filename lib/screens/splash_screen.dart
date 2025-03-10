@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:math';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -95,7 +97,6 @@ class _SplashScreenState extends State<SplashScreen>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  
                   ...List.generate(10, (index) {
                     final angle = 2 * pi * (_orbitAnimation.value + index / 10);
                     final distance = 170.0;
@@ -113,8 +114,10 @@ class _SplashScreenState extends State<SplashScreen>
                         child: Icon(
                           index.isEven ? Icons.star : Icons.bolt,
                           color: index.isEven
-                              ? const Color.fromARGB(255, 7, 193, 255).withOpacity(0.7)
-                              : Colors.purple.withOpacity(0.7),
+                              ? Color.fromARGB(255, 253, 200, 0)
+                                  .withOpacity(0.7)
+                              : Color.fromARGB(255, 28, 51, 95)
+                                  .withOpacity(0.7),
                           size: 13 +
                               18 *
                                   Curves.easeInOut
@@ -123,15 +126,13 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     );
                   }),
-
-                  
                   ShaderMask(
                     shaderCallback: (rect) {
                       return SweepGradient(
                         colors: [
-                          Colors.purple[400]!,
-                          Colors.blue[400]!,
-                          Colors.purple[400]!,
+                          Color.fromARGB(255, 253, 200, 0),
+                          Color.fromARGB(255, 28, 51, 95),
+                          Color.fromARGB(255, 253, 200, 0),
                         ],
                         stops: [0.0, 0.5, 1.0],
                         transform:
@@ -147,13 +148,10 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         children: [
                           const TextSpan(text: 'Survey '),
-
-                          
                           WidgetSpan(
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                
                                 const Text(
                                   'G',
                                   style: TextStyle(
@@ -162,8 +160,6 @@ class _SplashScreenState extends State<SplashScreen>
                                     color: Colors.white,
                                   ),
                                 ),
-
-                                
                                 if (_showSparkle)
                                   ...List.generate(10, (index) {
                                     return SparkleParticle(
@@ -175,7 +171,6 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                             alignment: PlaceholderAlignment.middle,
                           ),
-
                           const TextSpan(text: 'enie'),
                         ],
                       ),
@@ -192,22 +187,19 @@ class _SplashScreenState extends State<SplashScreen>
 }
 
 class SparkleParticle extends StatelessWidget {
-  
   static const List<IconData> shapes = [
     Icons.star,
     Icons.diamond,
-   
   ];
 
   final int index;
   final double pulse;
 
-  
   const SparkleParticle({
     required this.index,
     required this.pulse,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -223,10 +215,10 @@ class SparkleParticle extends StatelessWidget {
       child: Transform.scale(
         scale: 0.8 + 0.6 * sin(pulse * pi * 2),
         child: Icon(
-          shapes[index % shapes.length], 
+          shapes[index % shapes.length],
           color: Color.lerp(
-            Colors.yellow[200],
-            Colors.white,
+            Color.fromARGB(255, 28, 51, 95),
+            Color.fromARGB(255, 255, 242, 175),
             random.nextDouble(),
           )?.withOpacity(0.8 + 0.2 * sin(pulse * pi)),
           size: 20 + 18 * sin(pulse * pi),
