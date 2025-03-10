@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:student_questionnaire/groups/AddStudentScreen.dart';
 
 class GroupDetailsScreen extends StatefulWidget {
-  final String groupId; 
+  final String groupId;
   const GroupDetailsScreen({required this.groupId, super.key});
 
   @override
@@ -16,25 +16,44 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.groupId), 
+        title: Text(widget.groupId, style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            Image.asset(
-                'assets/${widget.groupId.toLowerCase().replaceAll("/", "_")}.png'), 
-            SizedBox(height: 10),
+            Container(
+              width: 350,
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(6),
+                image: DecorationImage(
+                  image: AssetImage(
+                      'assets/${widget.groupId.toLowerCase().replaceAll("/", "_")}.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
             Text(
               "List of ${widget.groupId} students",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             SizedBox(height: 20),
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('students')
-                  .where('group',
-                      isEqualTo: widget.groupId) 
+                  .where('group', isEqualTo: widget.groupId)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -87,29 +106,30 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddStudentScreen(
-                        groupId: widget.groupId), 
+                    builder: (context) =>
+                        AddStudentScreen(groupId: widget.groupId),
                   ),
                 );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromARGB(255, 253, 200, 0),
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                textStyle: TextStyle(fontSize: 18),
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, color: Colors.white),
+                  Icon(Icons.add, color: Colors.black),
                   SizedBox(width: 5),
                   Text("Add to the group",
-                      style: TextStyle(color: Colors.white)),
+                      style: TextStyle(color: Colors.black)),
                 ],
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                textStyle: TextStyle(fontSize: 18),
               ),
             ),
           ],
         ),
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
     );
   }
 }
@@ -263,16 +283,101 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               onPressed: () {
                 _updateStudentInDatabase();
               },
-              child:
-                  Text("Update Student", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child:
+                  Text("Update Student", style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class BottomNavigationBarWidget extends StatelessWidget {
+  const BottomNavigationBarWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          BottomNavItem(
+            icon: Icons.home,
+            label: "Home",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.edit,
+            label: "Create Survey",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/createsurvv');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.group,
+            label: "Groups",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.navigate_next,
+            label: "Add Student",
+            onTap: () {
+              Navigator.pushNamed(context, '/admin_dashboard');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  const BottomNavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.isSelected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
+            ),
+          ),
+        ],
       ),
     );
   }
