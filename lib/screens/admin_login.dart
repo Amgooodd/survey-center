@@ -48,7 +48,13 @@ class _adminLoginState extends State<AdminLogin> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("admin Login"),
+        title: Text("Admin Login", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -57,7 +63,10 @@ class _adminLoginState extends State<AdminLogin> {
           children: [
             Text(
               "Enter Your admin ID",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             SizedBox(height: 16),
             TextField(
@@ -73,11 +82,11 @@ class _adminLoginState extends State<AdminLogin> {
             ElevatedButton(
               onPressed: _validateadminId,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: Color.fromARGB(255, 253, 200, 0),
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
-              child: Text("Submit", style: TextStyle(color: Colors.white)),
+              child: Text("Submit", style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
