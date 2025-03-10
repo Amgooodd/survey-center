@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,7 +15,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
   late Stream<List<DocumentSnapshot>> _surveysStream;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  Set<String> _selectedDepartments = {}; 
+  final Set<String> _selectedDepartments = {};
 
   final List<String> _departments = ['CS', 'Stat', 'Math'];
 
@@ -61,15 +59,13 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                 onChanged: (value) {
                   setState(() {
                     if (value!) {
-                      _selectedDepartments.add(department); 
+                      _selectedDepartments.add(department);
                     } else {
-                      _selectedDepartments
-                          .remove(department); 
+                      _selectedDepartments.remove(department);
                     }
                   });
-                  Navigator.pop(context); 
-                  _showFilterOptions(
-                      context); 
+                  Navigator.pop(context);
+                  _showFilterOptions(context);
                 },
               );
             }).toList(),
@@ -77,7 +73,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); 
+                Navigator.pop(context);
               },
               child: Text('Done'),
             ),
@@ -90,20 +86,25 @@ class _FirstForAdminState extends State<FirstForAdmin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Home for Admin", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+      ),
       backgroundColor: Colors.white,
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          SizedBox(height: 50),
+          SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Home for Admin',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
                 SizedBox(height: 10),
                 Row(
                   children: [
@@ -126,7 +127,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                     ),
                     SizedBox(width: 10),
                     PopupMenuButton<String>(
-                      icon: Icon(Icons.filter_list), 
+                      icon: Icon(Icons.filter_list),
                       itemBuilder: (context) => _departments.map((department) {
                         return PopupMenuItem<String>(
                           value: department,
@@ -138,14 +139,12 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                                 onChanged: (value) {
                                   setState(() {
                                     if (value!) {
-                                      _selectedDepartments
-                                          .add(department); 
+                                      _selectedDepartments.add(department);
                                     } else {
-                                      _selectedDepartments.remove(
-                                          department); 
+                                      _selectedDepartments.remove(department);
                                     }
                                   });
-                                  Navigator.pop(context); 
+                                  Navigator.pop(context);
                                 },
                               ),
                               Text(department),
@@ -165,8 +164,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                         return Chip(
                           label: Text(department),
                           deleteIcon: Icon(Icons.close, size: 16),
-                          onDeleted: () =>
-                              _clearFilter(department), 
+                          onDeleted: () => _clearFilter(department),
                         );
                       }).toList(),
                     ),
@@ -174,29 +172,38 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                 SizedBox(height: 20),
                 Text(
                   'Create a New Survey',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
                 ),
-                Text('Follow the instructions to create your survey.'),
+                Text(
+                  'Follow the instructions to create your survey.',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
                 SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color.fromARGB(255, 253, 200, 0),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                       onPressed: () async {
                         await Navigator.pushNamed(context, '/createsurvv');
-                        _refreshSurveys(); 
+                        _refreshSurveys();
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.add, color: Colors.white),
+                          Icon(Icons.add, color: Colors.black),
                           Text(' Create Survey',
-                              style: TextStyle(color: Colors.white)),
+                              style: TextStyle(color: Colors.black)),
                         ],
                       ),
                     ),
@@ -205,7 +212,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
+                    backgroundColor: const Color.fromARGB(255, 253, 200, 0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -215,22 +222,25 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.remove_red_eye, color: Colors.white),
+                      Icon(Icons.remove_red_eye, color: Colors.black),
                       Text(' View Groups',
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: Colors.black)),
                     ],
                   ),
                 ),
                 SizedBox(height: 20),
                 Text(
                   'Surveys',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
                 ),
                 SizedBox(height: 10),
                 Container(
-                  height: 300,
+                  height: 330,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
+                    border: Border.all(color: Colors.black),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: SingleChildScrollView(
@@ -295,7 +305,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                               title: data['name'] ?? 'Unnamed Survey',
                               subtitle: '${questions.length} questions',
                               departments: departments,
-                              image: "assets/exam2.png",
+                              image: "assets/ansr.png",
                               createdAt: formattedTime,
                               survey: doc,
                             );
@@ -341,7 +351,7 @@ class SurveyCard extends StatelessWidget {
         height: 140,
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+          boxShadow: [BoxShadow(color: Colors.black, blurRadius: 2)],
           borderRadius: BorderRadius.circular(4),
         ),
         child: Row(
@@ -355,26 +365,30 @@ class SurveyCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: Colors.black),
                     ),
                     Text(
                       'Departments: $departments',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: Colors.black),
                     ),
                     Text(
                       'Created: $createdAt',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: Colors.black),
                     ),
                     SizedBox(height: 10),
                     Flexible(
                       child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 253, 200, 0)),
                         onPressed: () {
-                          
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -383,7 +397,8 @@ class SurveyCard extends StatelessWidget {
                             ),
                           );
                         },
-                        child: Text('View Details'),
+                        child: Text('View Details',
+                            style: TextStyle(color: Colors.black)),
                       ),
                     ),
                   ],
@@ -415,9 +430,9 @@ class BottomNavigationBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 99,
+      height: 80,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 28, 51, 95),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
       ),
       child: Row(
@@ -432,10 +447,10 @@ class BottomNavigationBarWidget extends StatelessWidget {
             },
           ),
           BottomNavItem(
-            icon: Icons.pie_chart,
-            label: "Survey Results",
+            icon: Icons.edit,
+            label: "Create Survey",
             onTap: () {
-              Navigator.pushReplacementNamed(context, '/showsurvv');
+              Navigator.pushReplacementNamed(context, '/createsurvv');
             },
           ),
           BottomNavItem(
@@ -479,12 +494,13 @@ class BottomNavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isSelected ? Colors.black : Colors.grey, size: 24),
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
           Text(
             label,
             style: TextStyle(
               fontSize: 10,
-              color: isSelected ? Colors.black : Colors.grey,
+              color: isSelected ? Colors.white : Colors.blueGrey,
             ),
           ),
         ],
