@@ -11,22 +11,21 @@ class _Group extends State<Group> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Groups", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+      ),
       backgroundColor: Colors.white,
       body: Stack(
         children: [
           Column(
             children: [
-              SizedBox(height: 50),
-              Text(
-                "Groups",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
+              SizedBox(height: 70),
               Expanded(
                 child: GridView.count(
                   padding: EdgeInsets.symmetric(horizontal: 20),
@@ -41,7 +40,7 @@ class _Group extends State<Group> {
                         Navigator.pushNamed(
                           context,
                           '/groupDetails',
-                          arguments: "STAT/CS", 
+                          arguments: "STAT/CS",
                         );
                       },
                     ),
@@ -52,7 +51,7 @@ class _Group extends State<Group> {
                         Navigator.pushNamed(
                           context,
                           '/groupDetails',
-                          arguments: "Math/CS", 
+                          arguments: "Math/CS",
                         );
                       },
                     ),
@@ -63,7 +62,7 @@ class _Group extends State<Group> {
                         Navigator.pushNamed(
                           context,
                           '/groupDetails',
-                          arguments: "Chemistry", 
+                          arguments: "Chemistry",
                         );
                       },
                     ),
@@ -72,14 +71,9 @@ class _Group extends State<Group> {
               ),
             ],
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNavigationBarWidget(),
-          ),
         ],
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
     );
   }
 }
@@ -132,41 +126,43 @@ class BottomNavigationBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 99,
+      height: 80,
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 2),
-        ],
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           BottomNavItem(
-              icon: Icons.home,
-              label: "Home",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/firsrforadminn');
-              }),
+            icon: Icons.home,
+            label: "Home",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.edit,
-              label: "Create Survey",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/createsurvv');
-              }),
+            icon: Icons.edit,
+            label: "Create Survey",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/createsurvv');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.pie_chart,
-              label: "Survey Results",
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/showsurvv');
-              }),
+            icon: Icons.group,
+            label: "Groups",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
           BottomNavItem(
-              icon: Icons.group,
-              label: "Groups",
-              isSelected: true,
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/groupp');
-              }),
+            icon: Icons.navigate_next,
+            label: "Add Student",
+            onTap: () {
+              Navigator.pushNamed(context, '/admin_dashboard');
+            },
+          ),
         ],
       ),
     );
@@ -190,18 +186,21 @@ class BottomNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon,
-                color: isSelected ? Colors.black : Colors.grey, size: 24),
-            Text(
-              label,
-              style: TextStyle(
-                  fontSize: 10, color: isSelected ? Colors.black : Colors.grey),
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
             ),
-          ],
-        ));
+          ),
+        ],
+      ),
+    );
   }
 }
