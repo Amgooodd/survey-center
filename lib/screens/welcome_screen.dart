@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class WelcomeScreen extends StatelessWidget {
   final String studentId;
 
-  WelcomeScreen({required this.studentId});
+  const WelcomeScreen({super.key, required this.studentId});
 
   @override
   Widget build(BuildContext context) {
@@ -19,23 +19,19 @@ class WelcomeScreen extends StatelessWidget {
             .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-           
             return Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-           
             return Center(child: Text("Error: ${snapshot.error}"));
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
-            
             return Center(child: Text("Student not found!"));
           }
 
           final studentName = snapshot.data!['name'] as String?;
 
-         
           return Center(
             child: Text(
               "Welcome, $studentName!",
