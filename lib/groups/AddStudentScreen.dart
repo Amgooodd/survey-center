@@ -89,7 +89,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-            "Add Student to ${groupNameMap[widget.groupId] ?? 'Unknown Group'}"),
+            "Add Student to ${groupNameMap[widget.groupId] ?? 'Unknown Group'}",
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -121,17 +128,103 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   : () {
                       _addStudentToDatabase(widget.groupId);
                     },
-              child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text("Add Student", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: Color.fromARGB(255, 253, 200, 0),
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child: _isLoading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text("Add Student", style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
+    );
+  }
+}
+
+class BottomNavigationBarWidget extends StatelessWidget {
+  const BottomNavigationBarWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          BottomNavItem(
+            icon: Icons.home,
+            label: "Home",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.edit,
+            label: "Create Survey",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/createsurvv');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.group,
+            label: "Groups",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.navigate_next,
+            label: "Add Student",
+            onTap: () {
+              Navigator.pushNamed(context, '/admin_dashboard');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  const BottomNavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.isSelected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
+            ),
+          ),
+        ],
       ),
     );
   }
