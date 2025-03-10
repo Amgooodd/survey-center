@@ -255,6 +255,12 @@ class _StudentFormState extends State<StudentForm> {
                               subtitle: Text(
                                   survey['description'] ?? 'No description'),
                               trailing: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color.fromARGB(255, 253, 200,
+                                      0), // Change background color
+                                  foregroundColor:
+                                      Colors.black, // Change text color
+                                ),
                                 onPressed: () {
                                   Navigator.push(
                                     context,
