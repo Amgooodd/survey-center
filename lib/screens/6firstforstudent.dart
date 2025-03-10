@@ -5,17 +5,24 @@ class StudentForm extends StatefulWidget {
   final String studentId;
   final String studentGroup; // ✅ تأكد أنه يتم استقباله
 
-  StudentForm({
-    Key? key,
+  const StudentForm({
+    super.key,
     required this.studentId,
     required this.studentGroup,
-  }) : super(key: key);
+  });
 
   @override
   _StudentFormState createState() => _StudentFormState();
 }
 
 class _StudentFormState extends State<StudentForm> {
+  late Stream<List<DocumentSnapshot>> _surveysStream;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  final Set<String> _selectedDepartments = {};
+
+  final List<String> _departments = ['CS', 'Stat', 'Math'];
+
   Future<List<Map<String, dynamic>>> getSurveys() async {
     List<String> groupComponents = widget.studentGroup
         .split('/')
@@ -38,51 +45,244 @@ class _StudentFormState extends State<StudentForm> {
     }).toList();
   }
 
+  void _refreshSurveys() {
+    setState(() {
+      _surveysStream = FirebaseFirestore.instance
+          .collection('surveys')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+    });
+  }
+
+  void _clearFilter(String department) {
+    setState(() {
+      _selectedDepartments.remove(department);
+    });
+  }
+
+  // ignore: unused_element
+  void _showFilterOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Filter by Departments'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _departments.map((department) {
+              return CheckboxListTile(
+                title: Text(department),
+                value: _selectedDepartments.contains(department),
+                onChanged: (value) {
+                  setState(() {
+                    if (value!) {
+                      _selectedDepartments.add(department);
+                    } else {
+                      _selectedDepartments.remove(department);
+                    }
+                  });
+                  Navigator.pop(context);
+                  _showFilterOptions(context);
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Done'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Available Surveys")),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: getSurveys(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("No surveys available for your group."));
-          }
-
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              var survey = snapshot.data![index];
-              return Card(
-                margin: EdgeInsets.all(10),
-                child: ListTile(
-                  title: Text(survey['name'] ?? 'Untitled Survey'),
-                  subtitle: Text(survey['description'] ?? 'No description'),
-                  trailing: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SurveyQuestionsPage(
-                            studentId: widget.studentId,
-                            surveyId: survey['id'],
-                            studentGroup:
-                                widget.studentGroup, // ✅ تمرير studentGroup هنا
+      appBar: AppBar(
+        title: Text("Home for Student", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        children: [
+          SizedBox(height: 20),
+          Positioned(
+            top: 158,
+            left: 50,
+            child: Container(
+              width: 390,
+              height: 257,
+              color: Colors.white,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0), // Add horizontal padding
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(Icons.search),
+                              hintText: 'Search surveys...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value.toLowerCase();
+                              });
+                            },
                           ),
                         ),
+                        SizedBox(width: 10),
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.filter_list),
+                          itemBuilder: (context) =>
+                              _departments.map((department) {
+                            return PopupMenuItem<String>(
+                              value: department,
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: _selectedDepartments
+                                        .contains(department),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        if (value!) {
+                                          _selectedDepartments.add(department);
+                                        } else {
+                                          _selectedDepartments
+                                              .remove(department);
+                                        }
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  Text(department),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 30),
+                  if (_selectedDepartments.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Wrap(
+                        spacing: 8.0,
+                        children: _selectedDepartments.map((department) {
+                          return Chip(
+                            label: Text(department),
+                            deleteIcon: Icon(Icons.close, size: 16),
+                            onDeleted: () => _clearFilter(department),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  Container(
+                    width: 350,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(6),
+                      image: DecorationImage(
+                        image: AssetImage("assets/stat_cs.png"),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                SizedBox(height: 30),
+                Text(
+                  'Your available surveys',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
+                SizedBox(height: 20),
+                Container(
+                  height: 300,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: FutureBuilder<List<Map<String, dynamic>>>(
+                    future: getSurveys(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(
+                            child:
+                                Text("No surveys available for your group."));
+                      }
+
+                      return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          var survey = snapshot.data![index];
+                          return Card(
+                            margin: EdgeInsets.all(10),
+                            child: ListTile(
+                              title: Text(survey['name'] ?? 'Untitled Survey'),
+                              subtitle: Text(
+                                  survey['description'] ?? 'No description'),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SurveyQuestionsPage(
+                                        studentId: widget.studentId,
+                                        surveyId: survey['id'],
+                                        studentGroup: widget
+                                            .studentGroup, // ✅ تمرير studentGroup هنا
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Text("Start Survey"),
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                    child: Text("Start Survey"),
                   ),
                 ),
-              );
-            },
-          );
-        },
+              ],
+            ),
+          ),
+        ],
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
     );
   }
 }
@@ -92,7 +292,8 @@ class SurveyQuestionsPage extends StatefulWidget {
   final String surveyId;
   final String studentGroup; // ✅ أضف studentGroup هنا
 
-  SurveyQuestionsPage({
+  const SurveyQuestionsPage({
+    super.key,
     required this.studentId,
     required this.surveyId,
     required this.studentGroup, // ✅ استقباله هنا
@@ -105,7 +306,7 @@ class SurveyQuestionsPage extends StatefulWidget {
 class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   bool hasSubmitted = false;
   List<Map<String, dynamic>> _questions = [];
-  Map<String, dynamic> _answers = {};
+  final Map<String, dynamic> _answers = {};
 
   @override
   void initState() {
@@ -178,8 +379,9 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
 
   // ✅ دالة لمنع الخروج بدون إرسال الإجابات
   Future<bool> _onWillPop() async {
-    if (hasSubmitted || _answers.isEmpty)
+    if (hasSubmitted || _answers.isEmpty) {
       return true; // خروج عادي إذا تم الإرسال
+    }
 
     return (await showDialog(
           context: context,
@@ -207,7 +409,16 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
     return WillPopScope(
       onWillPop: _onWillPop, // ✅ منع الخروج بدون إرسال
       child: Scaffold(
-        appBar: AppBar(title: Text("Survey Questions")),
+        appBar: AppBar(
+          title:
+              Text("Survey Questions", style: TextStyle(color: Colors.white)),
+          backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+          centerTitle: true,
+        ),
         body: hasSubmitted
             ? Center(child: Text("You have already submitted this survey."))
             : _questions.isEmpty
@@ -283,6 +494,11 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                 padding: EdgeInsets.all(10),
                 child: ElevatedButton(
                   onPressed: _submitAnswers,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(
+                        255, 253, 200, 0), // Change background color
+                    foregroundColor: Colors.black, // Change text color
+                  ),
                   child: Text("Submit Answers"),
                 ),
               ),
@@ -296,8 +512,10 @@ class ThankYouPage extends StatelessWidget {
   final String studentId;
   final String studentGroup; // ✅ أضف studentGroup
 
-  ThankYouPage(
-      {required this.studentId, required this.studentGroup}); // ✅ استقباله هنا
+  const ThankYouPage(
+      {super.key,
+      required this.studentId,
+      required this.studentGroup}); // ✅ استقباله هنا
 
   @override
   Widget build(BuildContext context) {
@@ -331,6 +549,77 @@ class ThankYouPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class BottomNavigationBarWidget extends StatelessWidget {
+  const BottomNavigationBarWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          BottomNavItem(
+            icon: Icons.home,
+            label: "Home",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.edit,
+            label: "Survey history",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/createsurvv');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  const BottomNavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.isSelected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
+            ),
+          ),
+        ],
       ),
     );
   }
