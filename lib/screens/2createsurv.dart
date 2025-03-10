@@ -13,7 +13,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
   List<Map<String, dynamic>> _questions = [];
   int _questionCount = 1;
 
-  List<String> _departments = ['Stat', 'Math', 'CS'];
+  final List<String> _departments = ['Stat', 'Math', 'CS'];
   List<String> _selectedDepartments = [];
 
   void _addQuestion(bool isFeedback) {
@@ -103,10 +103,13 @@ class _CreateSurveyState extends State<CreateSurvey> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Create Survey"),
+        title: Text("Create Survey", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 3,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -116,7 +119,10 @@ class _CreateSurveyState extends State<CreateSurvey> {
             children: [
               Text(
                 "Create Survey Name",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black),
               ),
               SizedBox(height: 10),
               TextField(
@@ -129,7 +135,10 @@ class _CreateSurveyState extends State<CreateSurvey> {
               SizedBox(height: 20),
               Text(
                 "Select Departments",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black),
               ),
               SizedBox(height: 10),
               Wrap(
@@ -153,7 +162,10 @@ class _CreateSurveyState extends State<CreateSurvey> {
               SizedBox(height: 30),
               Text(
                 "Create Survey Questions",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black),
               ),
               SizedBox(height: 20),
               ..._questions.asMap().entries.map((entry) {
@@ -170,7 +182,9 @@ class _CreateSurveyState extends State<CreateSurvey> {
                           child: Text(
                             question['title'],
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black),
                           ),
                         ),
                         IconButton(
@@ -257,23 +271,32 @@ class _CreateSurveyState extends State<CreateSurvey> {
                     SizedBox(height: 20),
                   ],
                 );
-              }).toList(),
+              }),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 253, 200, 0)),
                     onPressed: () => _addQuestion(false),
-                    child: Text("Add Multiple Choice Question"),
+                    child: Text("Add Multiple Choice Question",
+                        style: TextStyle(color: Colors.black)),
                   ),
                   SizedBox(height: 10),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 253, 200, 0)),
                     onPressed: () => _addQuestion(true),
-                    child: Text("Add Feedback Question"),
+                    child: Text("Add Feedback Question",
+                        style: TextStyle(color: Colors.black)),
                   ),
                   SizedBox(height: 10),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 253, 200, 0)),
                     onPressed: _finishSurvey,
-                    child: Text("Finish the survey"),
+                    child: Text("Finish the survey",
+                        style: TextStyle(color: Colors.black)),
                   ),
                 ],
               ),
@@ -281,6 +304,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
           ),
         ),
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(),
     );
   }
 
@@ -300,5 +324,90 @@ class _CreateSurveyState extends State<CreateSurvey> {
     setState(() {
       _questions.removeAt(index);
     });
+  }
+}
+
+class BottomNavigationBarWidget extends StatelessWidget {
+  const BottomNavigationBarWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          BottomNavItem(
+            icon: Icons.home,
+            label: "Home",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/firsrforadminn');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.edit,
+            label: "Create Survey",
+            isSelected: true,
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/createsurvv');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.group,
+            label: "Groups",
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/groupp');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.navigate_next,
+            label: "Add Student",
+            onTap: () {
+              Navigator.pushNamed(context, '/admin_dashboard');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  const BottomNavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.isSelected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
