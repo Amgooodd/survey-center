@@ -3,7 +3,6 @@ import '../screens/splash_screen.dart';
 import '../screens/first_image_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/welcome_screen.dart';
-import '../screens/student_login.dart';
 import '../screens/admin_login.dart';
 import '../screens/1firstforadmin.dart';
 import '../screens/2createsurv.dart';

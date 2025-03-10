@@ -1,63 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class StudentLogin extends StatefulWidget {
-  @override
-  _StudentLoginState createState() => _StudentLoginState();
-}
-
-class _StudentLoginState extends State<StudentLogin> {
-  final TextEditingController _idController = TextEditingController();
-
-  Future<void> _validateStudentId() async {
-    String id = _idController.text.trim();
-    if (id.isEmpty) return;
-
-    final DocumentSnapshot snapshot =
-        await FirebaseFirestore.instance.collection('students').doc(id).get();
-
-    if (snapshot.exists) {
-      String studentGroup = snapshot.get('group');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => StudentForm(
-            studentId: id,
-            studentGroup: studentGroup,
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Invalid student ID. Please try again.")),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Student Login")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _idController,
-              decoration: InputDecoration(labelText: "Enter Student ID"),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _validateStudentId,
-              child: Text("Login"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class StudentForm extends StatefulWidget {
   final String studentId;
   final String studentGroup; // ✅ تأكد أنه يتم استقباله
@@ -84,7 +27,7 @@ class _StudentFormState extends State<StudentForm> {
 
     return snapshot.docs.where((doc) {
       List<dynamic> departments = (doc.data() as Map)['departments'] ?? [];
-      return departments.any(
+      return departments.every(
         (dept) =>
             groupComponents.contains(dept.toString().trim().toUpperCase()),
       );
