@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '6firstforstudent.dart';
+
 class StudentLogin extends StatefulWidget {
   const StudentLogin({super.key});
 
@@ -12,22 +14,28 @@ class _StudentLoginState extends State<StudentLogin> {
   final TextEditingController _idController = TextEditingController();
 
   Future<void> _validateStudentId() async {
-    final String id = _idController.text.trim();
-    if (id.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter your ID.")),
-      );
-      return;
-    }
+    String id = _idController.text.trim();
+    if (id.isEmpty) return;
 
-    // Check if the student ID exists in Firestore
+    // التحقق من الـ Student ID في Firestore
     final DocumentSnapshot snapshot =
         await FirebaseFirestore.instance.collection('students').doc(id).get();
+
     if (snapshot.exists) {
-      // Redirect to the welcome screen if the ID is valid
-      Navigator.pushReplacementNamed(context, '/studentformm', arguments: id);
+      // الحصول على الـ studentGroup من الـ Firestore
+      String studentGroup = snapshot.get('group');
+
+      // الانتقال إلى صفحة StudentForm مع تمرير الـ studentId و studentGroup
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StudentForm(
+            studentId: id, // تمرير الـ studentId
+            studentGroup: studentGroup, // تمرير الـ studentGroup
+          ),
+        ),
+      );
     } else {
-      // Show an error message if the ID is invalid
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Invalid student ID. Please try again.")),
       );

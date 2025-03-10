@@ -10,8 +10,7 @@ import '../screens/2createsurv.dart';
 import '../screens/3showsurv.dart';
 import '../groups/4group.dart';
 import '../groups/UploadData.dart';
-import '../screens/6firstforstudent.dart';
-
+import 'package:student_questionnaire/screens/student_login.dart' as login1;
 
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
@@ -23,15 +22,14 @@ class AppRoutes {
     '/createsurvv': (context) => CreateSurvey(),
     '/showsurvv': (context) => showsurv(),
     '/groupp': (context) => Group(),
-    '/studentformm': (context) => studentform(),
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
-    '/studentlogin': (context) => StudentLogin(),
-   
-  
-     // ignore: equal_keys_in_map
-     '/groupp': (context) => Group(), 
-        '/groupDetails': (context) => GroupDetailsScreen(
-              groupId: ModalRoute.of(context)!.settings.arguments as String,)
+    '/studentlogin': (context) => const login1.StudentLogin(),
+
+    // ignore: equal_keys_in_map
+    '/groupp': (context) => Group(),
+    '/groupDetails': (context) => GroupDetailsScreen(
+          groupId: ModalRoute.of(context)!.settings.arguments as String,
+        )
   };
 }
