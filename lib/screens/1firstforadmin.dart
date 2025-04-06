@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'vewdetails.dart';
 
 class FirstForAdmin extends StatefulWidget {
@@ -223,7 +222,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                   child: Row(
                     children: [
                       Icon(Icons.remove_red_eye, color: Colors.black),
-                      Text(' View Groups',
+                      Text(' View groups',
                           style: TextStyle(color: Colors.black)),
                     ],
                   ),

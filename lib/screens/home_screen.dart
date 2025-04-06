@@ -50,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       SizedBox(height: 20),
-                      Image.asset('assets/images/whstudent.png', height: 100),
+                      Image.asset('assets/images/whadmin.png', height: 100),
                       SizedBox(height: 10),
                       Text("Admin",
                           style: TextStyle(fontSize: 18, color: Colors.white)),
@@ -72,7 +72,7 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       SizedBox(height: 20),
-                      Image.asset('assets/images/whadmin.png', height: 100),
+                      Image.asset('assets/images/whstudent.png', height: 100),
                       SizedBox(height: 10),
                       Text("Student",
                           style: TextStyle(fontSize: 18, color: Colors.white)),

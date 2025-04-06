@@ -13,7 +13,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
   List<Map<String, dynamic>> _questions = [];
   int _questionCount = 1;
 
-  final List<String> _departments = ['All', 'Stat', 'Math', 'CS', 'Chemistry'];
+  final List<String> _departments = ['Stat', 'Math', 'CS'];
   List<String> _selectedDepartments = [];
 
   void _addQuestion(bool isFeedback) {
@@ -144,27 +144,18 @@ class _CreateSurveyState extends State<CreateSurvey> {
               Wrap(
                 spacing: 10,
                 children: _departments.map((department) {
-                  bool isSelectable = department == 'All' ||
-                      !_selectedDepartments.contains('All');
-
                   return FilterChip(
                     label: Text(department),
                     selected: _selectedDepartments.contains(department),
                     onSelected: (isSelected) {
-                      if (!isSelectable) return;
                       setState(() {
-                        if (department == 'All') {
-                          _selectedDepartments = isSelected ? ['All'] : [];
+                        if (isSelected) {
+                          _selectedDepartments.add(department);
                         } else {
-                          if (isSelected) {
-                            _selectedDepartments.add(department);
-                          } else {
-                            _selectedDepartments.remove(department);
-                          }
+                          _selectedDepartments.remove(department);
                         }
                       });
                     },
-                    backgroundColor: isSelectable ? null : Colors.grey[300],
                   );
                 }).toList(),
               ),

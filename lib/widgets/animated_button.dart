@@ -7,6 +7,7 @@ class AnimatedButton extends StatelessWidget {
   final Color textColor;
 
   const AnimatedButton({
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor = Colors.black,

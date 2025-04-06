@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext.kotlin_version = '2.1.20' // Ensure Kotlin version is up-to-date
+    ext.kotlin_version = '1.8.10' // Ensure Kotlin version is up-to-date
     repositories {
         google() // Use Google's Maven repository
         mavenCentral() // Use Maven Central repository

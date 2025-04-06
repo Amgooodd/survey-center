@@ -12,17 +12,11 @@ class SurveyDetailsScreen extends StatefulWidget {
 
 class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
   Future<void> _deleteSurvey() async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('surveys')
-          .doc(widget.survey.id)
-          .delete();
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to delete survey: $e")),
-      );
-    }
+    await FirebaseFirestore.instance
+        .collection('surveys')
+        .doc(widget.survey.id)
+        .delete();
+    Navigator.pop(context);
   }
 
   void _showDeleteConfirmation() {
@@ -310,22 +304,13 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
           .doc(widget.survey.id)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data == null) {
+        if (!snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(title: Text('Survey Details')),
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
-        final data = snapshot.data!.data() as Map<String, dynamic>?;
-
-        if (data == null) {
-          return Scaffold(
-            appBar: AppBar(title: Text('Survey Details')),
-            body: Center(child: Text('Survey data not found')),
-          );
-        }
-
+        final data = snapshot.data!.data() as Map<String, dynamic>;
         final questions = data['questions'] ?? [];
         final departments =
             (data['departments'] as List?)?.join(', ') ?? 'Unknown Departments';

@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StudentForm extends StatefulWidget {
   final String studentId;
-  final String studentGroup; // ✅ تأكد أنه يتم استقباله
+  final String studentGroup;
 
   const StudentForm({
     super.key,
@@ -16,7 +16,9 @@ class StudentForm extends StatefulWidget {
 }
 
 class _StudentFormState extends State<StudentForm> {
+  late Stream<List<DocumentSnapshot>> _surveysStream;
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   final Set<String> _selectedDepartments = {};
 
   final List<String> _departments = ['CS', 'Stat', 'Math'];
@@ -32,17 +34,24 @@ class _StudentFormState extends State<StudentForm> {
 
     return snapshot.docs.where((doc) {
       List<dynamic> departments = (doc.data() as Map)['departments'] ?? [];
-      return departments
-              .any((dept) => dept.toString().trim().toUpperCase() == "ALL") ||
-          departments.every(
-            (dept) =>
-                groupComponents.contains(dept.toString().trim().toUpperCase()),
-          );
+      return departments.every(
+        (dept) =>
+            groupComponents.contains(dept.toString().trim().toUpperCase()),
+      );
     }).map((doc) {
       var data = doc.data() as Map<String, dynamic>;
       data['id'] = doc.id;
       return data;
     }).toList();
+  }
+
+  void _refreshSurveys() {
+    setState(() {
+      _surveysStream = FirebaseFirestore.instance
+          .collection('surveys')
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+    });
   }
 
   void _clearFilter(String department) {
@@ -132,7 +141,9 @@ class _StudentFormState extends State<StudentForm> {
                               ),
                             ),
                             onChanged: (value) {
-                              setState(() {});
+                              setState(() {
+                                _searchQuery = value.toLowerCase();
+                              });
                             },
                           ),
                         ),

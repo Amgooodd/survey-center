@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 
 class AdminDashboard extends StatefulWidget {
+  const AdminDashboard({super.key});
+
   @override
   _AdminDashboardState createState() => _AdminDashboardState();
 }
@@ -15,7 +17,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     'CS',
     'Stat',
     'Math',
-   
   ];
 
   Future<void> _addStudentToDatabase() async {
@@ -138,23 +139,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   );
                 }
               },
-              child: Text("Add Student", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child: Text("Add Student", style: TextStyle(color: Colors.white)),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _viewStudents,
-              child:
-                  Text("View Students", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: TextStyle(fontSize: 18),
               ),
+              child:
+                  Text("View Students", style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -164,6 +165,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
 }
 
 class ViewStudentsScreen extends StatefulWidget {
+  const ViewStudentsScreen({super.key});
+
   @override
   _ViewStudentsScreenState createState() => _ViewStudentsScreenState();
 }

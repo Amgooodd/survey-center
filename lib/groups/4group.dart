@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:student_questionnaire/screens/addexel.dart';
 
 class Group extends StatefulWidget {
   const Group({super.key});
@@ -66,11 +67,36 @@ class _Group extends State<Group> {
                         );
                       },
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 253, 200, 0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          onPressed: () {
+                            FileUploader().pickFile(context);
+                          },
+                          child: Row(
+                            children: [
+                              Icon(Icons.person_add_alt_1, color: Colors.black),
+                              Text(' Add students ',
+                                  style: TextStyle(color: Colors.black)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ],
           ),
+          SizedBox(height: 40),
         ],
       ),
       bottomNavigationBar: BottomNavigationBarWidget(),
