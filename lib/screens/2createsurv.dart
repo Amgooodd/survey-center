@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateSurvey extends StatefulWidget {
   const CreateSurvey({super.key});
-
   @override
   _CreateSurveyState createState() => _CreateSurveyState();
 }
@@ -12,9 +11,9 @@ class _CreateSurveyState extends State<CreateSurvey> {
   final TextEditingController _surveyNameController = TextEditingController();
   List<Map<String, dynamic>> _questions = [];
   int _questionCount = 1;
-
-  final List<String> _departments = ['Stat', 'Math', 'CS'];
+  final List<String> _departments = ['All', 'Stat', 'Math', 'CS', 'Chemistry'];
   List<String> _selectedDepartments = [];
+  bool _allowMultipleSubmissions = false; // NEW
 
   void _addQuestion(bool isFeedback) {
     setState(() {
@@ -43,7 +42,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
         );
         return;
       }
-
       await FirebaseFirestore.instance.collection('surveys').add({
         'name': surveyName,
         'questions': questions
@@ -60,8 +58,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
             .toList(),
         'timestamp': FieldValue.serverTimestamp(),
         'departments': _selectedDepartments,
+        'allow_multiple_submissions': _allowMultipleSubmissions, // NEW
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Survey added successfully!")),
       );
@@ -75,7 +73,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
 
   void _finishSurvey() async {
     final String surveyName = _surveyNameController.text.trim();
-
     if (_selectedDepartments.isEmpty ||
         surveyName.isEmpty ||
         _questions.isEmpty) {
@@ -87,7 +84,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
       );
       return;
     }
-
     await _addSurveyToDatabase(surveyName, _questions);
     _surveyNameController.clear();
     setState(() {
@@ -144,22 +140,67 @@ class _CreateSurveyState extends State<CreateSurvey> {
               Wrap(
                 spacing: 10,
                 children: _departments.map((department) {
+                  bool isSelectable = department == 'All' ||
+                      !_selectedDepartments.contains('All');
                   return FilterChip(
                     label: Text(department),
                     selected: _selectedDepartments.contains(department),
                     onSelected: (isSelected) {
+                      if (!isSelectable) return;
                       setState(() {
-                        if (isSelected) {
-                          _selectedDepartments.add(department);
+                        if (department == 'All') {
+                          _selectedDepartments = isSelected ? ['All'] : [];
                         } else {
-                          _selectedDepartments.remove(department);
+                          if (isSelected) {
+                            _selectedDepartments.add(department);
+                          } else {
+                            _selectedDepartments.remove(department);
+                          }
                         }
                       });
                     },
+                    backgroundColor: isSelectable ? null : Colors.grey[300],
                   );
                 }).toList(),
               ),
+              // NEW SECTION STARTS HERE
               SizedBox(height: 30),
+              Text(
+                "Submission Settings",
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black),
+              ),
+              SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: !_allowMultipleSubmissions
+                          ? Color.fromARGB(255, 253, 200, 0)
+                          : Colors.grey,
+                    ),
+                    onPressed: () =>
+                        setState(() => _allowMultipleSubmissions = false),
+                    child: Text("Once", style: TextStyle(color: Colors.black)),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _allowMultipleSubmissions
+                          ? Color.fromARGB(255, 253, 200, 0)
+                          : Colors.grey,
+                    ),
+                    onPressed: () =>
+                        setState(() => _allowMultipleSubmissions = true),
+                    child: Text("Multiple Times",
+                        style: TextStyle(color: Colors.black)),
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
+              // NEW SECTION ENDS HERE
               Text(
                 "Create Survey Questions",
                 style: TextStyle(
@@ -171,7 +212,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
               ..._questions.asMap().entries.map((entry) {
                 final index = entry.key;
                 final question = entry.value;
-
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -329,7 +369,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
 
 class BottomNavigationBarWidget extends StatelessWidget {
   const BottomNavigationBarWidget({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -381,7 +420,6 @@ class BottomNavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback? onTap;
-
   const BottomNavItem({
     super.key,
     required this.icon,
@@ -389,7 +427,6 @@ class BottomNavItem extends StatelessWidget {
     this.isSelected = false,
     this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
