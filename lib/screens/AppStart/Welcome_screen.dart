@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/animated_button.dart';
 
 class FirstImageScreen extends StatelessWidget {
   const FirstImageScreen({super.key});
@@ -47,13 +46,18 @@ class FirstImageScreen extends StatelessWidget {
             bottom: 40,
             left: 20,
             right: 20,
-            child: AnimatedButton(
-              text: 'Start Survey',
+            child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/home');
+                Navigator.pushNamed(context, '/complog');
               },
-              backgroundColor: const Color.fromARGB(255, 28, 51, 95),
-              textColor: Colors.white,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
+              child: const Text('Start Survey',
+                  style: TextStyle(color: Colors.white, fontSize: 18)),
             ),
           ),
         ],

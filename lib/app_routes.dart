@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import '../screens/splash_screen.dart';
-import '../screens/first_image_screen.dart';
-import '../screens/home_screen.dart';
-import '../screens/welcome_screen.dart';
-import '../screens/admin_login.dart';
-import '../screens/1firstforadmin.dart';
-import '../screens/2createsurv.dart';
-import '../screens/3showsurv.dart';
-import '../groups/4group.dart';
-import '../groups/UploadData.dart';
-import 'package:student_questionnaire/screens/student_login.dart' as login1;
+import 'screens/AppStart/Splash_screen.dart';
+import 'screens/AppStart/Welcome_screen.dart';
+import 'deleted/Home_screen.dart';
+import 'deleted/welcome_screen.dart';
+import 'deleted/admin_login.dart';
+import 'screens/AdminHome/admin_home.dart';
+import 'screens/AdminHome/survey_create.dart';
+import 'deleted/3showsurv.dart';
+import 'screens/groups/groups_main.dart';
+import 'screens/groups/groups_details.dart';
+import 'screens/Auth/login_page.dart';
+import 'package:student_questionnaire/deleted/student_login.dart' as login1;
 
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
@@ -21,6 +22,8 @@ class AppRoutes {
     '/createsurvv': (context) => CreateSurvey(),
     '/showsurvv': (context) => showsurv(),
     '/groupp': (context) => Group(),
+    '/complog': (context) => CombinedLogin(),
+
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => const login1.StudentLogin(),

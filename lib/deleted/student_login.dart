@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '6firstforstudent.dart';
+import '../screens/StudHome/student_home.dart';
 
 class StudentLogin extends StatefulWidget {
   const StudentLogin({super.key});
@@ -17,21 +17,18 @@ class _StudentLoginState extends State<StudentLogin> {
     String id = _idController.text.trim();
     if (id.isEmpty) return;
 
-    // التحقق من الـ Student ID في Firestore
     final DocumentSnapshot snapshot =
         await FirebaseFirestore.instance.collection('students').doc(id).get();
 
     if (snapshot.exists) {
-      // الحصول على الـ studentGroup من الـ Firestore
       String studentGroup = snapshot.get('group');
 
-      // الانتقال إلى صفحة StudentForm مع تمرير الـ studentId و studentGroup
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => StudentForm(
-            studentId: id, // تمرير الـ studentId
-            studentGroup: studentGroup, // تمرير الـ studentGroup
+            studentId: id,
+            studentGroup: studentGroup,
           ),
         ),
       );
