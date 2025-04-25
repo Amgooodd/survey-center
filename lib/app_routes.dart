@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:student_questionnaire/screens/AdminHome/anal.dart';
 import 'screens/AppStart/Splash_screen.dart';
 import 'screens/AppStart/Welcome_screen.dart';
 import 'deleted/Home_screen.dart';
@@ -23,7 +24,7 @@ class AppRoutes {
     '/showsurvv': (context) => showsurv(),
     '/groupp': (context) => Group(),
     '/complog': (context) => CombinedLogin(),
-
+    '/elanall': (context) => anall(),
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => const login1.StudentLogin(),

@@ -1,74 +1,78 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:excel/excel.dart';
-import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart';
 
-class expoFileScreen extends StatefulWidget {
-  @override
-  _UploadFileScreenState createState() => _UploadFileScreenState();
-}
-
-class _UploadFileScreenState extends State<expoFileScreen> {
+class SurveyExporter {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> _exportToExcel() async {
-    if (await Permission.storage.request().isDenied) {
-      return;
+  Future<void> exportSurveyResponses(String surveyId) async {
+    // 1. Load survey questions
+    final surveyDoc = await _firestore.collection('surveys').doc(surveyId).get();
+    final surveyData = surveyDoc.data() as Map<String, dynamic>;
+    final surveyName = surveyData['name'] ?? 'Unnamed_Survey';
+    // Remove special characters from survey name to make it file-system friendly
+    final safeFileName = surveyName.replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(' ', '_');
+    
+    final questions = List<Map<String, dynamic>>.from(surveyDoc['questions']);
+    final questionTitles = questions.map((q) => q['title'].toString()).toList();
+
+    // 2. Load student responses
+    final responsesSnapshot = await _firestore
+        .collection('students_responses')
+        .where('surveyId', isEqualTo: surveyId)
+        .get();
+
+    // 3. Prepare workbook and worksheet
+    final workbook = xlsio.Workbook();
+    final sheet = workbook.worksheets[0];
+
+    // 4. Prepare headers
+    final headers = ['Student ID', 'Student Name', 'Student Group', ...questionTitles];
+    sheet.importList(headers, 1, 1, false); // row 1
+
+    // 5. Fill responses
+    int rowIndex = 2; // Excel rows are 1-indexed
+    for (var doc in responsesSnapshot.docs) {
+      final data = doc.data();
+      final studentId = data['studentId'].toString();
+      
+      // Fetch student name and group from students collection
+      final studentDoc = await _firestore.collection('students').doc(studentId).get();
+      final studentData = studentDoc.data();
+      final studentName = studentDoc.exists && studentData != null ? studentData['name'].toString() : 'Unknown';
+      final studentGroup = studentDoc.exists && studentData != null ? studentData['group'].toString() : 'Unknown';
+      
+      final answers = Map<String, dynamic>.from(data['answers']);
+      final row = [
+        studentId,
+        studentName,
+        studentGroup,
+        ...questionTitles.map((q) => answers[q]?.toString() ?? '')
+      ];
+      sheet.importList(row, rowIndex, 1, false);
+      rowIndex++;
     }
 
-    QuerySnapshot snapshot = await _firestore.collection('students').get();
+    // 6. Allow the user to pick a location to save the file
+    String? directoryPath = await FilePicker.platform.getDirectoryPath();
 
-    var excel = Excel.createExcel();
-    Sheet sheet = excel['Students'];
+    String? savePath;
 
-    sheet.appendRow([
-      FormulaCellValue("Group"),
-      FormulaCellValue("ID"),
-      FormulaCellValue("Name"),
-    ]);
-
-    for (var doc in snapshot.docs) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      sheet.appendRow([
-        data['group'] ?? '',
-        data['ID'] ?? '',
-        data['name'] ?? '',
-      ]);
+    if (directoryPath != null) {
+      savePath = '$directoryPath/$safeFileName.xlsx';
+    } else {
+      final dir = await getExternalStorageDirectory();
+      savePath = '${dir!.path}/$safeFileName.xlsx';
     }
 
-    final directory = await getExternalStorageDirectory();
-    String filePath = "${directory!.path}/students.xlsx";
-    File(filePath)
-      ..createSync(recursive: true)
-      ..writeAsBytesSync(excel.encode()!);
+    // 3. Now save
+    final file = File(savePath);
+    final bytes = workbook.saveAsStream();
+    workbook.dispose();
+    await file.writeAsBytes(bytes, flush: true);
 
-    _showSuccessMessage('saved to $filePath');
-  }
-
-  void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('downnnn')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _exportToExcel,
-              child: Text('Excel'),
-            ),
-          ],
-        ),
-      ),
-    );
+    print('✅ Excel file saved at: ${file.path}');
   }
 }

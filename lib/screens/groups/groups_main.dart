@@ -85,7 +85,7 @@ class _Group extends State<Group> {
                           child: Row(
                             children: [
                               Icon(Icons.person_add_alt_1, color: Colors.black),
-                              Text(' Add students ',
+                              Text(' Upload Data ',
                                   style: TextStyle(color: Colors.black)),
                             ],
                           ),
@@ -148,3 +148,9 @@ class SubjectCard extends StatelessWidget {
     );
   }
 }
+
+
+
+/*onPressed: () {
+                            FileUploader().pickFile(context);
+                          },*/

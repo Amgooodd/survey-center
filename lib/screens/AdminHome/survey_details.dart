@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:student_questionnaire/Features/download_excel.dart';
 
 class SurveyDetailsScreen extends StatefulWidget {
   final DocumentSnapshot survey;
@@ -376,6 +377,17 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                       );
                     },
                   ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    await SurveyExporter()
+                        .exportSurveyResponses(widget.survey.id);
+                  },
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: Text('Downoad responses',
+                      style: TextStyle(color: Colors.white)),
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(

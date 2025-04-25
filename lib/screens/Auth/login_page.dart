@@ -89,6 +89,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
       appBar: AppBar(
         title: const Text('Login', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -183,11 +184,25 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Admin Login')),
+        appBar: AppBar(
+          title:
+              const Text('Admin login', style: TextStyle(color: Colors.white)),
+          backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+          centerTitle: true,
+        ),
         body: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const Text(
+                'Enter Your Password',
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 28, 51, 95)),
+              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -201,7 +216,16 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                  onPressed: _handleLogin, child: const Text('Login')),
+                onPressed: _handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
+                child:
+                    const Text('Login', style: TextStyle(color: Colors.black)),
+              ),
             ],
           ),
         ),

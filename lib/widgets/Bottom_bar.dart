@@ -51,7 +51,7 @@ class BottomNavigationBarWidget extends StatelessWidget {
             label: "Analytics",
             isSelected: anall,
             onTap: () {
-              Navigator.pushNamed(context, '/admin_dashboard');
+              Navigator.pushReplacementNamed(context, '/elanall');
             },
           ),
         ],
