@@ -4,14 +4,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class SurveyHistoryPage extends StatefulWidget {
   final String studentId;
   const SurveyHistoryPage({super.key, required this.studentId});
+
   @override
   _SurveyHistoryPageState createState() => _SurveyHistoryPageState();
 }
 
 class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
   String? _editingResponseId;
-  final Map<String, dynamic> _editedAnswers = {}; // Stores edited responses
+  final Map<String, dynamic> _editedAnswers = {}; 
   final Map<String, TextEditingController> _textControllers = {};
+  final Map<String, bool> _isExpanded = {}; 
+
+  List<String> _existingSurveyIds = []; 
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchExistingSurveyIds(); 
+  }
 
   @override
   void dispose() {
@@ -19,10 +29,18 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
     super.dispose();
   }
 
+  
+  Future<void> _fetchExistingSurveyIds() async {
+    final snapshot = await FirebaseFirestore.instance.collection('surveys').get();
+    setState(() {
+      _existingSurveyIds = snapshot.docs.map((doc) => doc.id).toList();
+    });
+  }
+
   Future<void> _saveChanges(String responseId, List<dynamic> questions) async {
     final updates = <String, dynamic>{};
 
-    // Combine edited answers from both text fields and multiple choice
+    
     questions.forEach((question) {
       if (question['type'] == 'multiple_choice') {
         updates[question['title']] = _editedAnswers[question['title']];
@@ -55,119 +73,176 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
             .where('studentId', isEqualTo: widget.studentId)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return CircularProgressIndicator();
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text("An error occurred: ${snapshot.error}"));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No survey responses found."));
+          }
+
+          
+          final filteredResponses = snapshot.data!.docs.where((response) {
+            return _existingSurveyIds.contains(response['surveyId']);
+          }).toList();
 
           return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
+            itemCount: filteredResponses.length,
             itemBuilder: (context, index) {
-              var response = snapshot.data!.docs[index];
+              var response = filteredResponses[index];
+              final responseId = response.id;
+
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection('surveys')
                     .doc(response['surveyId'])
                     .get(),
                 builder: (context, surveySnapshot) {
-                  if (!surveySnapshot.hasData) return Container();
+                  if (surveySnapshot.connectionState == ConnectionState.waiting) {
+                    return Card(
+                      child: ListTile(
+                        title: Text("Loading survey..."),
+                      ),
+                    );
+                  }
+
+                  if (surveySnapshot.hasError) {
+                    return Card(
+                      child: ListTile(
+                        title: Text("Error loading survey: ${surveySnapshot.error}"),
+                      ),
+                    );
+                  }
+
+                  if (!surveySnapshot.hasData || !surveySnapshot.data!.exists) {
+                    return Card(
+                      child: ListTile(
+                        title: Text("Survey data not found."),
+                      ),
+                    );
+                  }
 
                   var survey = surveySnapshot.data!;
-                  final questions = survey['questions'] as List<dynamic>;
-                  final answers = response['answers'] as Map<String, dynamic>;
+                  final questions = survey['questions'] as List<dynamic>? ?? [];
+                  final answers = response['answers'] as Map<String, dynamic>? ?? {};
 
                   return Card(
-                    child: ExpansionTile(
-                      title: Text(survey['name']),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Your Answers:",
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
-                              SizedBox(height: 10),
-                              ...questions.map<Widget>((question) {
-                                final answer = answers[question['title']];
-
-                                // Initialize edited answers with current values
-                                if (_editingResponseId == response.id) {
-                                  if (question['type'] == 'multiple_choice') {
-                                    _editedAnswers[question['title']] = answer;
-                                  } else {
-                                    final controllerKey =
-                                        '${response.id}${question['title']}';
-                                    if (!_textControllers
-                                        .containsKey(controllerKey)) {
-                                      _textControllers[controllerKey] =
-                                          TextEditingController(text: answer);
-                                    }
-                                  }
-                                }
-
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(question['title'],
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    SizedBox(height: 5),
-                                    _editingResponseId == response.id
-                                        ? _buildEditableAnswer(question, answer)
-                                        : Text(answer.toString()),
-                                    SizedBox(height: 10),
-                                  ],
-                                );
-                              }).toList(),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                    child: StatefulBuilder(
+                      builder: (context, setInnerState) {
+                        return ExpansionTile(
+                          title: Text(survey['name'] ?? "Unnamed Survey"),
+                          initiallyExpanded: _isExpanded[responseId] ?? false,
+                          onExpansionChanged: (bool expanded) {
+                            setInnerState(() {
+                              _isExpanded[responseId] = expanded;
+                            });
+                          },
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (_editingResponseId == response.id)
-                                    TextButton(
-                                      onPressed: () async {
-                                        await _saveChanges(
-                                            response.id, questions);
-                                      },
-                                      child: Text('Save'),
-                                    ),
-                                  if (_editingResponseId == response.id)
-                                    TextButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _editingResponseId = null;
-                                          _textControllers.forEach(
-                                              (key, value) => value.dispose());
-                                          _textControllers.clear();
-                                          _editedAnswers.clear();
-                                        });
-                                      },
-                                      child: Text('Cancel'),
-                                    ),
-                                  TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _editingResponseId = response.id;
-                                      });
-                                    },
-                                    child: Text('Edit'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () async {
-                                      await FirebaseFirestore.instance
-                                          .collection('students_responses')
-                                          .doc(response.id)
-                                          .delete();
-                                      setState(() {});
-                                    },
-                                    child: Text('Delete',
-                                        style: TextStyle(color: Colors.red)),
+                                  Text("Your Answers:",
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold)),
+                                  SizedBox(height: 10),
+                                  ...questions.map<Widget>((question) {
+                                    final answer = answers[question['title']] ?? "";
+
+                                    
+                                    if (_editingResponseId == responseId) {
+                                      if (question['type'] == 'multiple_choice') {
+                                        _editedAnswers[question['title']] = answer;
+                                      } else {
+                                        final controllerKey =
+                                            '${responseId}${question['title']}';
+                                        if (!_textControllers.containsKey(controllerKey)) {
+                                          _textControllers[controllerKey] =
+                                              TextEditingController(text: answer);
+                                        }
+                                      }
+                                    }
+
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(question['title'] ?? "Untitled Question",
+                                            style: TextStyle(fontWeight: FontWeight.bold)),
+                                        SizedBox(height: 5),
+                                        _editingResponseId == responseId
+                                            ? _buildEditableAnswer(question, answer)
+                                            : Text(answer.toString()),
+                                        SizedBox(height: 10),
+                                      ],
+                                    );
+                                  }).toList(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (_editingResponseId == responseId)
+                                        TextButton(
+                                          onPressed: () async {
+                                            await _saveChanges(
+                                                responseId, questions);
+                                            setInnerState(() {
+                                              _isExpanded[responseId] = true;
+                                            });
+                                          },
+                                          child: Text('Save'),
+                                        ),
+                                      if (_editingResponseId == responseId)
+                                        TextButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _editingResponseId = null;
+                                              _textControllers.forEach(
+                                                  (key, value) => value.dispose());
+                                              _textControllers.clear();
+                                              _editedAnswers.clear();
+                                            });
+                                            setInnerState(() {
+                                              _isExpanded[responseId] = true;
+                                            });
+                                          },
+                                          child: Text('Cancel'),
+                                        ),
+                                      if (_editingResponseId != responseId)
+                                        TextButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _editingResponseId = responseId;
+                                            });
+                                            setInnerState(() {
+                                              _isExpanded[responseId] = true;
+                                            });
+                                          },
+                                          child: Text('Edit'),
+                                        ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          await FirebaseFirestore.instance
+                                              .collection('students_responses')
+                                              .doc(responseId)
+                                              .delete();
+                                          setState(() {});
+                                        },
+                                        child: Text('Delete',
+                                            style: TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   );
                 },
@@ -182,7 +257,7 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
   Widget _buildEditableAnswer(
       Map<String, dynamic> question, dynamic currentAnswer) {
     if (question['type'] == 'multiple_choice') {
-      // Initialize edited answer if not already set
+      
       if (_editingResponseId != null &&
           !_editedAnswers.containsKey(question['title'])) {
         _editedAnswers[question['title']] = currentAnswer;
@@ -191,7 +266,7 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
       return StatefulBuilder(
         builder: (context, setInnerState) {
           return Column(
-            children: question['options'].map<Widget>((option) {
+            children: question['options']?.map<Widget>((option) {
               return RadioListTile(
                 title: Text(option),
                 value: option,
@@ -203,7 +278,7 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                 },
                 activeColor: Colors.blue,
               );
-            }).toList(),
+            }).toList() ?? [],
           );
         },
       );

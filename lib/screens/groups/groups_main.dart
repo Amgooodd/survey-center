@@ -68,6 +68,17 @@ class _Group extends State<Group> {
                         );
                       },
                     ),
+                    SubjectCard(
+                      title: "CS",
+                      image: "assets/chemistry.png",
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/groupDetails',
+                          arguments: "CS",
+                        );
+                      },
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -151,6 +162,3 @@ class SubjectCard extends StatelessWidget {
 
 
 
-/*onPressed: () {
-                            FileUploader().pickFile(context);
-                          },*/

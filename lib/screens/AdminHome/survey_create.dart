@@ -1,10 +1,12 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:intl/intl.dart'; 
 import '../../widgets/Bottom_bar.dart';
 
 class CreateSurvey extends StatefulWidget {
   const CreateSurvey({super.key});
+
   @override
   _CreateSurveyState createState() => _CreateSurveyState();
 }
@@ -15,14 +17,30 @@ class _CreateSurveyState extends State<CreateSurvey> {
   int _questionCount = 1;
   final List<String> _departments = ['All', 'Stat', 'Math', 'CS', 'Chemistry'];
   List<String> _selectedDepartments = [];
-  bool _allowMultipleSubmissions = false; // NEW
+  bool _allowMultipleSubmissions = false;
+  DateTime? _deadline; 
+  bool _requireExactGroupCombination = false; 
 
-  void _addQuestion(bool isFeedback) {
+  @override
+  void initState() {
+    super.initState();
+    
+    Firebase.initializeApp().then((_) {
+      
+    }).catchError((error) {
+      print("Firebase initialization error: $error");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Firebase initialization failed. Please check your configuration.")),
+      );
+    });
+  }
+
+  void _addQuestion(bool istextfield) {
     setState(() {
-      if (isFeedback) {
+      if (istextfield) {
         _questions.add({
-          'title': 'Feedback $_questionCount',
-          'type': 'feedback',
+          'title': 'textfield $_questionCount',
+          'type': 'textfield',
         });
       } else {
         _questions.add({
@@ -60,7 +78,9 @@ class _CreateSurveyState extends State<CreateSurvey> {
             .toList(),
         'timestamp': FieldValue.serverTimestamp(),
         'departments': _selectedDepartments,
-        'allow_multiple_submissions': _allowMultipleSubmissions, // NEW
+        'allow_multiple_submissions': _allowMultipleSubmissions,
+        'deadline': _deadline, 
+        'require_exact_group_combination': _requireExactGroupCombination, 
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Survey added successfully!")),
@@ -92,8 +112,36 @@ class _CreateSurveyState extends State<CreateSurvey> {
       _questions = [];
       _questionCount = 1;
       _selectedDepartments = [];
+      _deadline = null; 
+      _requireExactGroupCombination = false; 
     });
     Navigator.pop(context);
+  }
+
+  Future<void> _selectDeadline() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _deadline = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -164,6 +212,38 @@ class _CreateSurveyState extends State<CreateSurvey> {
                     backgroundColor: isSelectable ? null : Colors.grey[300],
                   );
                 }).toList(),
+              ),
+              SizedBox(height: 30),
+              SwitchListTile(
+                title: Text("Exact Group"),
+                subtitle: Text("Only show to students in the exact selected groups"),
+                value: _requireExactGroupCombination,
+                onChanged: (value) {
+                  setState(() {
+                    _requireExactGroupCombination = value;
+                  });
+                },
+              ),
+              SizedBox(height: 10),
+              Text(
+                "Set Deadline",
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromARGB(255, 253, 200, 0),
+                ),
+                onPressed: _selectDeadline,
+                child: Text(
+                  _deadline != null
+                      ? DateFormat('yyyy-MM-dd HH:mm').format(_deadline!)
+                      : "Add Deadline",
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
               SizedBox(height: 30),
               Text(
@@ -294,7 +374,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
                           ),
                         ],
                       ),
-                    if (question['type'] == 'feedback')
+                    if (question['type'] == 'textfield')
                       TextField(
                         onChanged: (value) {
                           setState(() {
@@ -305,7 +385,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
                           border: OutlineInputBorder(),
                           filled: true,
                           fillColor: Colors.grey[200],
-                          hintText: "Edit the feedback question",
+                          hintText: "Edit the textfield question",
                         ),
                       ),
                     SizedBox(height: 20),
@@ -327,7 +407,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 253, 200, 0)),
                     onPressed: () => _addQuestion(true),
-                    child: Text("Add Feedback Question",
+                    child: Text("Add Textfield Question",
                         style: TextStyle(color: Colors.black)),
                   ),
                   SizedBox(height: 10),

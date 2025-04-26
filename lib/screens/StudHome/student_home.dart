@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:intl/intl.dart'; 
 import 'survey_history.dart';
+import 'dart:async'; 
 
 class StudentForm extends StatefulWidget {
   final String studentId;
   final String studentGroup;
-
   const StudentForm({
     super.key,
     required this.studentId,
@@ -20,77 +20,69 @@ class StudentForm extends StatefulWidget {
 class _StudentFormState extends State<StudentForm> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _selectedDepartments = {};
-
   final List<String> _departments = ['CS', 'Stat', 'Math'];
+  List<Map<String, dynamic>> _surveys = []; 
+  late Timer _timer; 
 
-  Future<List<Map<String, dynamic>>> getSurveys() async {
+  @override
+  void initState() {
+    super.initState();
+    _fetchSurveys();
+    _startTimer(); 
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); 
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+      setState(() {}); 
+    });
+  }
+
+  Future<void> _fetchSurveys() async {
     List<String> groupComponents = widget.studentGroup
         .split('/')
         .map((e) => e.trim().toUpperCase())
         .toList();
-
     QuerySnapshot snapshot =
         await FirebaseFirestore.instance.collection('surveys').get();
-
-    return snapshot.docs.where((doc) {
-      List<dynamic> departments = (doc.data() as Map)['departments'] ?? [];
-      return departments
-              .any((dept) => dept.toString().trim().toUpperCase() == "ALL") ||
-          departments.every(
-            (dept) =>
-                groupComponents.contains(dept.toString().trim().toUpperCase()),
-          );
-    }).map((doc) {
-      var data = doc.data() as Map<String, dynamic>;
-      data['id'] = doc.id;
-      return data;
-    }).toList();
+    setState(() {
+      _surveys = snapshot.docs.where((doc) {
+        List<dynamic> departments = (doc.data() as Map)['departments'] ?? [];
+        bool requireExactGroupCombination =
+            (doc.data() as Map)['require_exact_group_combination'] ?? false;
+        if (requireExactGroupCombination) {
+          
+          List<String> surveyDepartments = departments
+              .map((dept) => dept.toString().trim().toUpperCase())
+              .toList();
+          surveyDepartments.sort();
+          groupComponents.sort();
+          return surveyDepartments.join('/') == groupComponents.join('/');
+        } else {
+          return departments
+                  .any((dept) => dept.toString().trim().toUpperCase() == "ALL") ||
+              departments.every(
+                (dept) =>
+                    groupComponents.contains(dept.toString().trim().toUpperCase()),
+              );
+        }
+      }).map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    });
   }
 
   void _clearFilter(String department) {
     setState(() {
       _selectedDepartments.remove(department);
     });
-  }
-
-  // ignore: unused_element
-  void _showFilterOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Filter by Departments'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _departments.map((department) {
-              return CheckboxListTile(
-                title: Text(department),
-                value: _selectedDepartments.contains(department),
-                onChanged: (value) {
-                  setState(() {
-                    if (value!) {
-                      _selectedDepartments.add(department);
-                    } else {
-                      _selectedDepartments.remove(department);
-                    }
-                  });
-                  Navigator.pop(context);
-                  _showFilterOptions(context);
-                },
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Done'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -120,7 +112,7 @@ class _StudentFormState extends State<StudentForm> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0), // Add horizontal padding
+                        horizontal: 20.0), 
                     child: Row(
                       children: [
                         Expanded(
@@ -223,56 +215,73 @@ class _StudentFormState extends State<StudentForm> {
                     border: Border.all(color: Colors.black),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: FutureBuilder<List<Map<String, dynamic>>>(
-                    future: getSurveys(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(
-                            child:
-                                Text("No surveys available for your group."));
-                      }
-
-                      return ListView.builder(
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          var survey = snapshot.data![index];
-                          return Card(
-                            margin: EdgeInsets.all(10),
-                            child: ListTile(
-                              title: Text(survey['name'] ?? 'Untitled Survey'),
-                              subtitle: Text(
-                                  survey['description'] ?? 'No description'),
-                              trailing: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color.fromARGB(255, 253, 200,
-                                      0), // Change background color
-                                  foregroundColor:
-                                      Colors.black, // Change text color
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SurveyQuestionsPage(
-                                        studentId: widget.studentId,
-                                        surveyId: survey['id'],
-                                        studentGroup: widget
-                                            .studentGroup, // ✅ تمرير studentGroup هنا
+                  child: _surveys.isEmpty
+                      ? Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          itemCount: _surveys.length,
+                          itemBuilder: (context, index) {
+                            var survey = _surveys[index];
+                            DateTime? deadline = survey['deadline'] != null
+                                ? (survey['deadline'] as Timestamp).toDate()
+                                : null;
+                            bool isExpired = deadline != null &&
+                                deadline.isBefore(DateTime.now());
+                            bool isFiltered = _selectedDepartments.isNotEmpty &&
+                                !_selectedDepartments.contains(
+                                    survey['departments'][0]
+                                        .toString()
+                                        .trim()
+                                        .toUpperCase());
+                            if (isFiltered) {
+                              return SizedBox.shrink(); 
+                            }
+                            return Card(
+                              margin: EdgeInsets.all(10),
+                              child: ListTile(
+                                title: Text(survey['name'] ?? 'Untitled Survey'),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (survey['departments'] != null)
+                                      Text(
+                                        "Department(s): ${survey['departments'].join(', ')}",
                                       ),
-                                    ),
-                                  );
-                                },
-                                child: Text("Start Survey"),
+                                    if (deadline != null)
+                                      Text(
+                                        "Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(deadline)}",
+                                      ),
+                                    if (isExpired)
+                                      Text(
+                                        "This survey has expired.",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                  ],
+                                ),
+                                trailing: isExpired
+                                    ? null
+                                    : ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Color.fromARGB(255, 253, 200, 0), 
+                                          foregroundColor: Colors.black, 
+                                        ),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => SurveyQuestionsPage(
+                                                studentId: widget.studentId,
+                                                surveyId: survey['id'],
+                                                studentGroup: widget.studentGroup, 
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Text("Start Survey"),
+                                      ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
@@ -290,13 +299,12 @@ class _StudentFormState extends State<StudentForm> {
 class SurveyQuestionsPage extends StatefulWidget {
   final String studentId;
   final String surveyId;
-  final String studentGroup; // ✅ أضف studentGroup هنا
-
+  final String studentGroup; 
   const SurveyQuestionsPage({
     super.key,
     required this.studentId,
     required this.surveyId,
-    required this.studentGroup, // ✅ استقباله هنا
+    required this.studentGroup, 
   });
 
   @override
@@ -307,12 +315,29 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   bool hasSubmitted = false;
   List<Map<String, dynamic>> _questions = [];
   final Map<String, dynamic> _answers = {};
-  bool _allowMultipleSubmissions = false; // NEW
+  bool _allowMultipleSubmissions = false; 
+  DateTime? _deadline; 
+  late Timer _timer; 
 
   @override
   void initState() {
     super.initState();
     _checkIfSubmitted();
+    _startTimer(); 
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); 
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+      if (_deadline != null && _deadline!.isBefore(DateTime.now())) {
+        setState(() {}); 
+      }
+    });
   }
 
   Future<void> _submitAnswers() async {
@@ -323,19 +348,16 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       );
       return;
     }
-
-    // Create new response document instead of overwriting
+    
     await FirebaseFirestore.instance.collection('students_responses').add({
       'studentId': widget.studentId,
       'surveyId': widget.surveyId,
       'answers': _answers,
       'timestamp': FieldValue.serverTimestamp(),
     });
-
     if (!_allowMultipleSubmissions) {
       setState(() => hasSubmitted = true);
     }
-
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -348,28 +370,27 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   }
 
   Future<void> _checkIfSubmitted() async {
-    // Check survey settings first
+    
     DocumentSnapshot surveySnapshot = await FirebaseFirestore.instance
         .collection('surveys')
         .doc(widget.surveyId)
         .get();
-
     if (!surveySnapshot.exists) return;
-
     setState(() {
       _allowMultipleSubmissions =
           surveySnapshot['allow_multiple_submissions'] ?? false;
+      _deadline = surveySnapshot['deadline'] != null
+          ? (surveySnapshot['deadline'] as Timestamp).toDate()
+          : null;
     });
-
     if (!_allowMultipleSubmissions) {
-      // Check if ANY response exists for this student+survey combination
+      
       QuerySnapshot response = await FirebaseFirestore.instance
           .collection('students_responses')
           .where('studentId', isEqualTo: widget.studentId)
           .where('surveyId', isEqualTo: widget.surveyId)
           .limit(1)
           .get();
-
       if (response.docs.isNotEmpty) {
         setState(() => hasSubmitted = true);
       } else {
@@ -385,7 +406,6 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
         .collection('surveys')
         .doc(widget.surveyId)
         .get();
-
     if (snapshot.exists) {
       setState(() {
         _questions = List<Map<String, dynamic>>.from(
@@ -394,12 +414,11 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
     }
   }
 
-  // ✅ دالة لمنع الخروج بدون إرسال الإجابات
+  
   Future<bool> _onWillPop() async {
     if (hasSubmitted || _answers.isEmpty) {
-      return true; // خروج عادي إذا تم الإرسال
+      return true; 
     }
-
     return (await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -422,8 +441,9 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    bool isExpired = _deadline != null && _deadline!.isBefore(DateTime.now());
     return WillPopScope(
-      onWillPop: _onWillPop, //
+      onWillPop: _onWillPop, 
       child: Scaffold(
         appBar: AppBar(
           title:
@@ -435,89 +455,95 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
           ),
           centerTitle: true,
         ),
-        body: hasSubmitted
-            ? Center(child: Text("You have already submitted this survey."))
-            : _questions.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : Column(
-                    children: [
-                      LinearProgressIndicator(
-                        value: _answers.length / _questions.length,
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: _questions.length,
-                          itemBuilder: (context, index) {
-                            var question = _questions[index];
-
-                            return Card(
-                              margin: EdgeInsets.all(10),
-                              child: Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      question['title'] ?? 'Untitled Question',
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    SizedBox(height: 10),
-                                    if (question['type'] == 'multiple_choice')
-                                      Column(
-                                        children: (question['options']
-                                                as List<dynamic>)
-                                            .map<Widget>(
-                                                (option) => RadioListTile(
-                                                      title: Text(option),
-                                                      value: option,
-                                                      groupValue: _answers[
-                                                          question['title']],
-                                                      onChanged: (value) {
-                                                        setState(() {
-                                                          _answers[question[
-                                                              'title']] = value;
-                                                        });
-                                                      },
-                                                    ))
-                                            .toList(),
-                                      ),
-                                    if (question['type'] == 'feedback')
-                                      TextField(
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Enter your feedback...",
+        body: isExpired
+            ? Center(child: Text("This survey has expired."))
+            : hasSubmitted
+                ? Center(child: Text("You have already submitted this survey."))
+                : _questions.isEmpty
+                    ? Center(child: CircularProgressIndicator())
+                    : Column(
+                        children: [
+                          LinearProgressIndicator(
+                            value: _answers.length / _questions.length,
+                          ),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: _questions.length,
+                              itemBuilder: (context, index) {
+                                var question = _questions[index];
+                                return Card(
+                                  margin: EdgeInsets.all(10),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          question['title'] ?? 'Untitled Question',
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold),
                                         ),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _answers[question['title']] = value;
-                                          });
-                                        },
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                                        SizedBox(height: 10),
+                                        if (question['type'] == 'multiple_choice')
+                                          Column(
+                                            children: (question['options']
+                                                    as List<dynamic>)
+                                                .map<Widget>(
+                                                    (option) => RadioListTile(
+                                                          title: Text(option),
+                                                          value: option,
+                                                          groupValue: _answers[
+                                                              question[
+                                                                  'title']],
+                                                          onChanged: (value) {
+                                                            setState(() {
+                                                              _answers[question[
+                                                                  'title']] =
+                                                                  value;
+                                                            });
+                                                          },
+                                                        ))
+                                                .toList(),
+                                          ),
+                                        if (question['type'] == 'textfield')
+                                          TextField(
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Enter your Answer...",
+                                            ),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _answers[question['title']] =
+                                                    value;
+                                              });
+                                            },
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-        bottomNavigationBar: hasSubmitted
+        bottomNavigationBar: isExpired
             ? null
-            : Padding(
-                padding: EdgeInsets.all(10),
-                child: ElevatedButton(
-                  onPressed: _submitAnswers,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(
-                        255, 253, 200, 0), // Change background color
-                    foregroundColor: Colors.black, // Change text color
+            : hasSubmitted
+                ? null
+                : Padding(
+                    padding: EdgeInsets.all(10),
+                    child: ElevatedButton(
+                      onPressed: _submitAnswers,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(
+                            255, 253, 200, 0), 
+                        foregroundColor: Colors.black, 
+                      ),
+                      child: Text("Submit Answers"),
+                    ),
                   ),
-                  child: Text("Submit Answers"),
-                ),
-              ),
       ),
     );
   }
@@ -525,10 +551,10 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
 
 class ThankYouPage extends StatelessWidget {
   final String studentId;
-  final String studentGroup; // ✅ أضف studentGroup
-
+  final String studentGroup; 
   const ThankYouPage(
       {super.key, required this.studentId, required this.studentGroup});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -569,12 +595,12 @@ class ThankYouPage extends StatelessWidget {
 class BottomNavigationBarWidget extends StatelessWidget {
   final String studentId;
   final String studentGroup;
-
   const BottomNavigationBarWidget({
     super.key,
     required this.studentId,
     required this.studentGroup,
   });
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -619,7 +645,6 @@ class BottomNavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback? onTap;
-
   const BottomNavItem({
     super.key,
     required this.icon,
