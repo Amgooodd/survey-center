@@ -1,7 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../StudHome/student_home.dart';
+import 'dart:async';
 
 enum OTPPurpose { resetPassword }
 
@@ -168,6 +169,13 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         final data = doc.data();
         final storedPass = data?['password'] as String?;
         if (storedPass == input) {
+          User? user = FirebaseAuth.instance.currentUser;
+          if (user != null && !user.emailVerified) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please verify your email first.')),
+            );
+            return;
+          }
           Navigator.pushReplacementNamed(context, '/firsrforadminn',
               arguments: widget.adminId);
         } else {
@@ -242,28 +250,93 @@ class PasswordResetPage extends StatefulWidget {
 }
 
 class _PasswordResetPageState extends State<PasswordResetPage> {
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _newPassController = TextEditingController();
   final TextEditingController _confirmPassController = TextEditingController();
+  bool _isEmailSent = false;
+  bool _isEmailVerified = false;
 
-  void _submit() {
+  void _sendVerificationEmail() async {
+    final email = _emailController.text.trim();
     final newPass = _newPassController.text.trim();
     final confirmPass = _confirmPassController.text.trim();
 
-    if (newPass.isEmpty || confirmPass.isEmpty) return;
-    if (newPass != confirmPass) {
+    if (email.isEmpty || newPass.isEmpty || confirmPass.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Passwords do not match!')));
+        const SnackBar(content: Text('Please fill in all fields.')),
+      );
       return;
     }
 
-    FirebaseFirestore.instance
+    if (newPass != confirmPass) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match!')),
+      );
+      return;
+    }
+
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: newPass,
+      );
+
+      User? user = userCredential.user;
+      if (user != null) {
+        await user.sendEmailVerification();
+        setState(() {
+          _isEmailSent = true;
+        });
+      }
+    } catch (e) {
+      print('Error sending verification email: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sending verification email: $e')),
+      );
+    }
+  }
+
+  void _checkEmailVerification() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await user.reload();
+      if (user.emailVerified) {
+        setState(() {
+          _isEmailVerified = true;
+        });
+        _updateAdminPassword();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email not verified yet. Please check your email.')),
+        );
+      }
+    }
+  }
+
+  void _updateAdminPassword() async {
+  final newPass = _newPassController.text.trim();
+  final email = _emailController.text.trim(); 
+
+  try {
+    
+    await FirebaseFirestore.instance
         .collection('admins')
         .doc(widget.adminId)
-        .update({'password': newPass});
+        .update({
+      'password': newPass,
+      'email': email, 
+    });
+
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Password updated.')));
+        .showSnackBar(const SnackBar(content: Text('Password and email updated.')));
     Navigator.popUntil(context, (route) => route.isFirst);
+  } catch (e) {
+    print('Error updating password and email: $e');
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Error updating password and email: $e')));
   }
+}
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -273,22 +346,69 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TextField(
-                controller: _newPassController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                    labelText: 'New Password', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _confirmPassController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: _submit, child: const Text('Submit')),
+              if (!_isEmailSent)
+                Column(
+                  children: [
+                    TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                          labelText: 'Email', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _newPassController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                          labelText: 'New Password', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _confirmPassController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                          labelText: 'Confirm Password',
+                          border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _sendVerificationEmail,
+                      child: const Text('Send Verification Email'),
+                    ),
+                  ],
+                )
+              else if (!_isEmailVerified)
+                Column(
+                  children: [
+                    const Text(
+                      'Please check your email and verify your account.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _checkEmailVerification,
+                      child: const Text('Verify Email'),
+                    ),
+                  ],
+                )
+              else
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Thank you! Your new password has been added successfully.',
+                        style: TextStyle(fontSize: 16, color: Colors.green),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.popUntil(context, (route) => route.isFirst);
+                        },
+                        child: const Text('Back to Login'),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
