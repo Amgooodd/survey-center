@@ -2,9 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../StudHome/student_home.dart';
-import 'dart:async';
-
-enum OTPPurpose { resetPassword }
 
 class CombinedLogin extends StatefulWidget {
   const CombinedLogin({super.key});
@@ -16,13 +13,9 @@ class CombinedLogin extends StatefulWidget {
 class _CombinedLoginState extends State<CombinedLogin> {
   final TextEditingController _idController = TextEditingController();
 
-  Future<DocumentSnapshot<Map<String, dynamic>>?> _getAdminDoc(
-      String id) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>?> _getAdminDoc(String id) async {
     try {
-      return await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(id)
-          .get();
+      return await FirebaseFirestore.instance.collection('admins').doc(id).get();
     } catch (e) {
       print('Error fetching admin doc: $e');
       return null;
@@ -31,8 +24,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
 
   Future<bool> _checkStudentId(String id) async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('students').doc(id).get();
+      final snapshot = await FirebaseFirestore.instance.collection('students').doc(id).get();
       return snapshot.exists;
     } catch (e) {
       print('Error checking student ID: $e');
@@ -46,16 +38,14 @@ class _CombinedLoginState extends State<CombinedLogin> {
 
     final adminDoc = await _getAdminDoc(id);
     if (adminDoc != null && adminDoc.exists) {
-      final data = adminDoc.data()!;
-      final storedPass = data['password'] as String?;
-      final isFirstLogin = (storedPass == null || storedPass == 'Abc@123');
-
+      final hasEmail = (adminDoc.data()?['email'] ?? '').isNotEmpty;
+      
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => AdminLoginPage(
             adminId: id,
-            isFirstLogin: isFirstLogin,
+            isFirstLogin: !hasEmail,
           ),
         ),
       );
@@ -64,8 +54,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
 
     final isStudent = await _checkStudentId(id);
     if (isStudent) {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('students').doc(id).get();
+      final snapshot = await FirebaseFirestore.instance.collection('students').doc(id).get();
       final studentGroup = snapshot.data()?['group'] ?? 'default_group';
       Navigator.pushReplacement(
         context,
@@ -100,15 +89,16 @@ class _CombinedLoginState extends State<CombinedLogin> {
             const Text(
               'Enter Your ID',
               style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 28, 51, 95)),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 28, 51, 95)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _idController,
               decoration: const InputDecoration(
-                  labelText: 'ID', border: OutlineInputBorder()),
+                labelText: 'ID', 
+                border: OutlineInputBorder()),
               onEditingComplete: _validateId,
             ),
             const SizedBox(height: 16),
@@ -116,12 +106,10 @@ class _CombinedLoginState extends State<CombinedLogin> {
               onPressed: _validateId,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 253, 200, 0),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: const TextStyle(fontSize: 18),
               ),
-              child:
-                  const Text('Submit', style: TextStyle(color: Colors.black)),
+              child: const Text('Submit', style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -140,23 +128,27 @@ class AdminLoginPage extends StatefulWidget {
   @override
   _AdminLoginPageState createState() => _AdminLoginPageState();
 }
-
+ bool _obscurePassword = true;
 class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
+  final _defaultPassword = 'Abc@123';
 
   void _handleLogin() async {
     final input = _passwordController.text.trim();
+
     if (widget.isFirstLogin) {
-      if (input == 'Abc@123') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (_) => PasswordResetPage(adminId: widget.adminId)),
-        );
-      } else {
+      if (input != _defaultPassword) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Wrong default password!')));
+          const SnackBar(content: Text('Wrong default password!')),
+        );
+        return;
       }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PasswordResetPage(adminId: widget.adminId),
+        ),
+      );
       return;
     }
 
@@ -165,79 +157,147 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           .collection('admins')
           .doc(widget.adminId)
           .get();
-      if (doc.exists) {
-        final data = doc.data();
-        final storedPass = data?['password'] as String?;
-        if (storedPass == input) {
-          User? user = FirebaseAuth.instance.currentUser;
-          if (user != null && !user.emailVerified) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please verify your email first.')),
-            );
-            return;
-          }
-          Navigator.pushReplacementNamed(context, '/firsrforadminn',
-              arguments: widget.adminId);
-        } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Invalid password.')));
-        }
+          
+      final email = doc.data()?['email'] as String?;
+      if (email == null) throw Exception('Email not found in database');
+
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: input,
+      );
+
+      if (!userCredential.user!.emailVerified) {
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please verify your email first')),
+        );
+        return;
       }
+
+      Navigator.pushReplacementNamed(context, '/firsrforadminn',
+          arguments: widget.adminId);
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Authentication error: ${e.message ?? 'Unknown error'}')),
+      );
     } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('An error occurred.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
   }
 
+  void _handleForgotPassword() async {
+  try {
+    final doc = await FirebaseFirestore.instance
+        .collection('admins')
+        .doc(widget.adminId)
+        .get();
+        
+    final email = doc.data()?['email'] as String?;
+    if (email == null) throw Exception('No email associated with this account');
+
+    
+    final maskEmail = _maskEmail(email);
+    
+    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Password reset email sent to $maskEmail'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  }
+}
+
+String _maskEmail(String email) {
+  try {
+    final parts = email.split('@');
+    if (parts.length != 2) return email; 
+    
+    final localPart = parts[0];
+    final domain = parts[1];
+    
+    if (localPart.length <= 3) {
+      return '${'*' * localPart.length}@$domain';
+    }
+    
+    final visiblePart = localPart.substring(0, 3);
+    final maskedPart = '*' * (localPart.length - 3);
+    return '$visiblePart$maskedPart@$domain';
+  } catch (e) {
+    return '*****@*****'; 
+  }
+}
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title:
-              const Text('Admin login', style: TextStyle(color: Colors.white)),
-          backgroundColor: const Color.fromARGB(255, 28, 51, 95),
-          centerTitle: true,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Enter Your Password',
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 28, 51, 95)),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: widget.isFirstLogin
-                      ? 'Enter default password'
-                      : 'Password',
-                  border: const OutlineInputBorder(),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Login', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              widget.isFirstLogin 
+                  ? 'Enter Default Password'
+                  : 'Enter Your Password',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(255, 28, 51, 95)),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,  
+              decoration: InputDecoration(
+                labelText: widget.isFirstLogin ? 'Default Password' : 'Password',
+                border: const OutlineInputBorder(),
+                 suffixIcon: IconButton(  
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
                 ),
-                onSubmitted: (_) => _handleLogin(),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 253, 200, 0),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  textStyle: const TextStyle(fontSize: 18),
-                ),
-                child:
-                    const Text('Login', style: TextStyle(color: Colors.black)),
+              onSubmitted: (_) => _handleLogin(),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _handleLogin,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
               ),
-            ],
-          ),
+              child: Text(
+                widget.isFirstLogin ? 'Continue' : 'Login',
+                style: const TextStyle(color: Colors.black)),
+            ),
+            if (!widget.isFirstLogin)
+              TextButton(
+                onPressed: _handleForgotPassword,
+                child: const Text('Forgot Password?'),
+              ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 class PasswordResetPage extends StatefulWidget {
@@ -255,8 +315,25 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
   final TextEditingController _confirmPassController = TextEditingController();
   bool _isEmailSent = false;
   bool _isEmailVerified = false;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+  final Color _primaryColor = const Color.fromARGB(255, 28, 51, 95);
+  final Color _accentColor = const Color.fromARGB(255, 253, 200, 0);
 
-  void _sendVerificationEmail() async {
+  Future<void> _updateAdminEmail(String email) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(widget.adminId)
+          .update({'email': email});
+      print('Successfully updated admin email in Firestore');
+    } catch (e) {
+      print('Error updating admin email: $e');
+      throw Exception('Failed to update admin email');
+    }
+  }
+
+  Future<void> _sendVerificationEmail() async {
     final email = _emailController.text.trim();
     final newPass = _newPassController.text.trim();
     final confirmPass = _confirmPassController.text.trim();
@@ -276,141 +353,204 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
     }
 
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: newPass,
-      );
+      
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: newPass);
 
-      User? user = userCredential.user;
-      if (user != null) {
-        await user.sendEmailVerification();
-        setState(() {
-          _isEmailSent = true;
-        });
+      
+
+      
+      if (userCredential.user != null && !userCredential.user!.emailVerified) {
+        await userCredential.user!.sendEmailVerification();
+        setState(() => _isEmailSent = true);
       }
-    } catch (e) {
-      print('Error sending verification email: $e');
+    } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sending verification email: $e')),
+        SnackBar(content: Text('Authentication error: ${e.message ?? 'Unknown error'}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
-  void _checkEmailVerification() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await user.reload();
-      if (user.emailVerified) {
-        setState(() {
-          _isEmailVerified = true;
-        });
-        _updateAdminPassword();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email not verified yet. Please check your email.')),
-        );
-      }
+  Future<void> _checkEmailVerification() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await user.reload();
+    if (user.emailVerified) {
+    try {
+      await _updateAdminEmail(_emailController.text.trim());
+      setState(() => _isEmailVerified = true);
+      await Future.delayed(const Duration(seconds: 2));
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update account: $e')),
+      );
     }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Email not verified yet. Please check your inbox.')),
+    );
   }
-
-  void _updateAdminPassword() async {
-  final newPass = _newPassController.text.trim();
-  final email = _emailController.text.trim(); 
-
-  try {
-    
-    await FirebaseFirestore.instance
-        .collection('admins')
-        .doc(widget.adminId)
-        .update({
-      'password': newPass,
-      'email': email, 
-    });
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Password and email updated.')));
-    Navigator.popUntil(context, (route) => route.isFirst);
-  } catch (e) {
-    print('Error updating password and email: $e');
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Error updating password and email: $e')));
   }
-}
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Set New Password')),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!_isEmailSent)
-                Column(
-                  children: [
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                          labelText: 'Email', border: OutlineInputBorder()),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _newPassController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                          labelText: 'New Password', border: OutlineInputBorder()),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _confirmPassController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                          labelText: 'Confirm Password',
-                          border: OutlineInputBorder()),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _sendVerificationEmail,
-                      child: const Text('Send Verification Email'),
-                    ),
-                  ],
-                )
-              else if (!_isEmailVerified)
-                Column(
-                  children: [
-                    const Text(
-                      'Please check your email and verify your account.',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _checkEmailVerification,
-                      child: const Text('Verify Email'),
-                    ),
-                  ],
-                )
-              else
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Thank you! Your new password has been added successfully.',
-                        style: TextStyle(fontSize: 16, color: Colors.green),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.popUntil(context, (route) => route.isFirst);
-                        },
-                        child: const Text('Back to Login'),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Account Setup', style: TextStyle(color: Colors.white)),
+        backgroundColor: _primaryColor,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!_isEmailSent && !_isEmailVerified)
+              _buildSetupForm()
+            else if (_isEmailSent && !_isEmailVerified)
+              _buildVerificationPending()
+            else
+              _buildSuccessScreen()
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSetupForm() {
+    return Column(
+      children: [
+        const Text(
+          'Create Your Account',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 30),
+        TextField(
+          controller: _emailController,
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.email),
           ),
         ),
-      );
+        const SizedBox(height: 16),
+        TextField(
+          controller: _newPassController,
+          obscureText: _obscureNewPassword,
+          decoration: InputDecoration(
+            labelText: 'New Password',
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.lock),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
+                color: Colors.grey,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureNewPassword = !_obscureNewPassword;
+                });
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _confirmPassController,
+          obscureText: _obscureConfirmPassword,
+          decoration: InputDecoration(
+            labelText: 'Confirm Password',
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.lock_outline),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                color: Colors.grey,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                });
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 30),
+        ElevatedButton(
+          onPressed: _sendVerificationEmail,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _accentColor,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            textStyle: const TextStyle(fontSize: 18),
+          ),
+          child: const Text('Verify Email', style: TextStyle(color: Colors.black)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerificationPending() {
+    return Column(
+      children: [
+        const Icon(Icons.mark_email_read, size: 80, color: Colors.blue),
+        const SizedBox(height: 20),
+        const Text(
+          'Check Your Inbox!',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const Padding(
+          padding: EdgeInsets.all(20),
+          child: Text(
+            'We\'ve sent a verification link to your email address. '
+            'Please click the link to verify your account.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+        const SizedBox(height: 30),
+        ElevatedButton(
+          onPressed: _checkEmailVerification,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _accentColor,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            textStyle: const TextStyle(fontSize: 18),
+          ),
+          child: const Text('I\'ve Verified My Email', style: TextStyle(color: Colors.black)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuccessScreen() {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Icon(Icons.check_circle, size: 100, color: Colors.green),
+        const SizedBox(height: 20),
+        const Text(
+          'Account Verified!',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 20),
+        CircularProgressIndicator(
+          color: _accentColor,
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Redirecting to login...',
+          style: TextStyle(fontSize: 16),
+        ),
+      ],
+    ),
+  );
 }
+} 
