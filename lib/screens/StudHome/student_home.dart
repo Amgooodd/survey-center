@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'survey_history.dart';
-import 'dart:async'; 
+import 'dart:async';
 
 class StudentForm extends StatefulWidget {
   final String studentId;
@@ -21,25 +21,25 @@ class _StudentFormState extends State<StudentForm> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _selectedDepartments = {};
   final List<String> _departments = ['CS', 'Stat', 'Math'];
-  List<Map<String, dynamic>> _surveys = []; 
-  late Timer _timer; 
+  List<Map<String, dynamic>> _surveys = [];
+  late Timer _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchSurveys();
-    _startTimer(); 
+    _startTimer();
   }
 
   @override
   void dispose() {
-    _timer.cancel(); 
+    _timer.cancel();
     super.dispose();
   }
 
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
-      setState(() {}); 
+      setState(() {});
     });
   }
 
@@ -56,7 +56,6 @@ class _StudentFormState extends State<StudentForm> {
         bool requireExactGroupCombination =
             (doc.data() as Map)['require_exact_group_combination'] ?? false;
         if (requireExactGroupCombination) {
-          
           List<String> surveyDepartments = departments
               .map((dept) => dept.toString().trim().toUpperCase())
               .toList();
@@ -64,11 +63,11 @@ class _StudentFormState extends State<StudentForm> {
           groupComponents.sort();
           return surveyDepartments.join('/') == groupComponents.join('/');
         } else {
-          return departments
-                  .any((dept) => dept.toString().trim().toUpperCase() == "ALL") ||
+          return departments.any(
+                  (dept) => dept.toString().trim().toUpperCase() == "ALL") ||
               departments.every(
-                (dept) =>
-                    groupComponents.contains(dept.toString().trim().toUpperCase()),
+                (dept) => groupComponents
+                    .contains(dept.toString().trim().toUpperCase()),
               );
         }
       }).map((doc) {
@@ -93,7 +92,9 @@ class _StudentFormState extends State<StudentForm> {
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushNamed(context, '/complog');
+          },
         ),
         centerTitle: true,
       ),
@@ -111,8 +112,7 @@ class _StudentFormState extends State<StudentForm> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0), 
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Row(
                       children: [
                         Expanded(
@@ -233,12 +233,13 @@ class _StudentFormState extends State<StudentForm> {
                                         .trim()
                                         .toUpperCase());
                             if (isFiltered) {
-                              return SizedBox.shrink(); 
+                              return SizedBox.shrink();
                             }
                             return Card(
                               margin: EdgeInsets.all(10),
                               child: ListTile(
-                                title: Text(survey['name'] ?? 'Untitled Survey'),
+                                title:
+                                    Text(survey['name'] ?? 'Untitled Survey'),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -261,17 +262,20 @@ class _StudentFormState extends State<StudentForm> {
                                     ? null
                                     : ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(255, 253, 200, 0), 
-                                          foregroundColor: Colors.black, 
+                                          backgroundColor:
+                                              Color.fromARGB(255, 253, 200, 0),
+                                          foregroundColor: Colors.black,
                                         ),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => SurveyQuestionsPage(
+                                              builder: (context) =>
+                                                  SurveyQuestionsPage(
                                                 studentId: widget.studentId,
                                                 surveyId: survey['id'],
-                                                studentGroup: widget.studentGroup, 
+                                                studentGroup:
+                                                    widget.studentGroup,
                                               ),
                                             ),
                                           );
@@ -299,12 +303,12 @@ class _StudentFormState extends State<StudentForm> {
 class SurveyQuestionsPage extends StatefulWidget {
   final String studentId;
   final String surveyId;
-  final String studentGroup; 
+  final String studentGroup;
   const SurveyQuestionsPage({
     super.key,
     required this.studentId,
     required this.surveyId,
-    required this.studentGroup, 
+    required this.studentGroup,
   });
 
   @override
@@ -315,27 +319,27 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   bool hasSubmitted = false;
   List<Map<String, dynamic>> _questions = [];
   final Map<String, dynamic> _answers = {};
-  bool _allowMultipleSubmissions = false; 
-  DateTime? _deadline; 
-  late Timer _timer; 
+  bool _allowMultipleSubmissions = false;
+  DateTime? _deadline;
+  late Timer _timer;
 
   @override
   void initState() {
     super.initState();
     _checkIfSubmitted();
-    _startTimer(); 
+    _startTimer();
   }
 
   @override
   void dispose() {
-    _timer.cancel(); 
+    _timer.cancel();
     super.dispose();
   }
 
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
       if (_deadline != null && _deadline!.isBefore(DateTime.now())) {
-        setState(() {}); 
+        setState(() {});
       }
     });
   }
@@ -348,7 +352,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       );
       return;
     }
-    
+
     await FirebaseFirestore.instance.collection('students_responses').add({
       'studentId': widget.studentId,
       'surveyId': widget.surveyId,
@@ -370,7 +374,6 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   }
 
   Future<void> _checkIfSubmitted() async {
-    
     DocumentSnapshot surveySnapshot = await FirebaseFirestore.instance
         .collection('surveys')
         .doc(widget.surveyId)
@@ -384,7 +387,6 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
           : null;
     });
     if (!_allowMultipleSubmissions) {
-      
       QuerySnapshot response = await FirebaseFirestore.instance
           .collection('students_responses')
           .where('studentId', isEqualTo: widget.studentId)
@@ -414,10 +416,9 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
     }
   }
 
-  
   Future<bool> _onWillPop() async {
     if (hasSubmitted || _answers.isEmpty) {
-      return true; 
+      return true;
     }
     return (await showDialog(
           context: context,
@@ -443,7 +444,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   Widget build(BuildContext context) {
     bool isExpired = _deadline != null && _deadline!.isBefore(DateTime.now());
     return WillPopScope(
-      onWillPop: _onWillPop, 
+      onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
           title:
@@ -476,34 +477,35 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                                   child: Padding(
                                     padding: EdgeInsets.all(10),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          question['title'] ?? 'Untitled Question',
+                                          question['title'] ??
+                                              'Untitled Question',
                                           style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold),
                                         ),
                                         SizedBox(height: 10),
-                                        if (question['type'] == 'multiple_choice')
+                                        if (question['type'] ==
+                                            'multiple_choice')
                                           Column(
                                             children: (question['options']
                                                     as List<dynamic>)
-                                                .map<Widget>(
-                                                    (option) => RadioListTile(
-                                                          title: Text(option),
-                                                          value: option,
-                                                          groupValue: _answers[
-                                                              question[
-                                                                  'title']],
-                                                          onChanged: (value) {
-                                                            setState(() {
-                                                              _answers[question[
-                                                                  'title']] =
-                                                                  value;
-                                                            });
-                                                          },
-                                                        ))
+                                                .map<Widget>((option) =>
+                                                    RadioListTile(
+                                                      title: Text(option),
+                                                      value: option,
+                                                      groupValue: _answers[
+                                                          question['title']],
+                                                      onChanged: (value) {
+                                                        setState(() {
+                                                          _answers[question[
+                                                              'title']] = value;
+                                                        });
+                                                      },
+                                                    ))
                                                 .toList(),
                                           ),
                                         if (question['type'] == 'textfield')
@@ -537,9 +539,8 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                     child: ElevatedButton(
                       onPressed: _submitAnswers,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(
-                            255, 253, 200, 0), 
-                        foregroundColor: Colors.black, 
+                        backgroundColor: Color.fromARGB(255, 253, 200, 0),
+                        foregroundColor: Colors.black,
                       ),
                       child: Text("Submit Answers"),
                     ),
@@ -551,7 +552,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
 
 class ThankYouPage extends StatelessWidget {
   final String studentId;
-  final String studentGroup; 
+  final String studentGroup;
   const ThankYouPage(
       {super.key, required this.studentId, required this.studentGroup});
 

@@ -13,9 +13,13 @@ class CombinedLogin extends StatefulWidget {
 class _CombinedLoginState extends State<CombinedLogin> {
   final TextEditingController _idController = TextEditingController();
 
-  Future<DocumentSnapshot<Map<String, dynamic>>?> _getAdminDoc(String id) async {
+  Future<DocumentSnapshot<Map<String, dynamic>>?> _getAdminDoc(
+      String id) async {
     try {
-      return await FirebaseFirestore.instance.collection('admins').doc(id).get();
+      return await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(id)
+          .get();
     } catch (e) {
       print('Error fetching admin doc: $e');
       return null;
@@ -24,7 +28,8 @@ class _CombinedLoginState extends State<CombinedLogin> {
 
   Future<bool> _checkStudentId(String id) async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('students').doc(id).get();
+      final snapshot =
+          await FirebaseFirestore.instance.collection('students').doc(id).get();
       return snapshot.exists;
     } catch (e) {
       print('Error checking student ID: $e');
@@ -39,7 +44,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
     final adminDoc = await _getAdminDoc(id);
     if (adminDoc != null && adminDoc.exists) {
       final hasEmail = (adminDoc.data()?['email'] ?? '').isNotEmpty;
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -54,7 +59,8 @@ class _CombinedLoginState extends State<CombinedLogin> {
 
     final isStudent = await _checkStudentId(id);
     if (isStudent) {
-      final snapshot = await FirebaseFirestore.instance.collection('students').doc(id).get();
+      final snapshot =
+          await FirebaseFirestore.instance.collection('students').doc(id).get();
       final studentGroup = snapshot.data()?['group'] ?? 'default_group';
       Navigator.pushReplacement(
         context,
@@ -80,6 +86,12 @@ class _CombinedLoginState extends State<CombinedLogin> {
         title: const Text('Login', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushNamed(context, '/first');
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -89,16 +101,15 @@ class _CombinedLoginState extends State<CombinedLogin> {
             const Text(
               'Enter Your ID',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 28, 51, 95)),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 28, 51, 95)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _idController,
               decoration: const InputDecoration(
-                labelText: 'ID', 
-                border: OutlineInputBorder()),
+                  labelText: 'ID', border: OutlineInputBorder()),
               onEditingComplete: _validateId,
             ),
             const SizedBox(height: 16),
@@ -106,10 +117,12 @@ class _CombinedLoginState extends State<CombinedLogin> {
               onPressed: _validateId,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 253, 200, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: const TextStyle(fontSize: 18),
               ),
-              child: const Text('Submit', style: TextStyle(color: Colors.black)),
+              child:
+                  const Text('Submit', style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -128,7 +141,9 @@ class AdminLoginPage extends StatefulWidget {
   @override
   _AdminLoginPageState createState() => _AdminLoginPageState();
 }
- bool _obscurePassword = true;
+
+bool _obscurePassword = true;
+
 class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final _defaultPassword = 'Abc@123';
@@ -157,11 +172,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           .collection('admins')
           .doc(widget.adminId)
           .get();
-          
+
       final email = doc.data()?['email'] as String?;
       if (email == null) throw Exception('Email not found in database');
 
-      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: input,
       );
@@ -178,7 +194,9 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           arguments: widget.adminId);
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Authentication error: ${e.message ?? 'Unknown error'}')),
+        SnackBar(
+            content:
+                Text('Authentication error: ${e.message ?? 'Unknown error'}')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,51 +206,58 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   }
 
   void _handleForgotPassword() async {
-  try {
-    final doc = await FirebaseFirestore.instance
-        .collection('admins')
-        .doc(widget.adminId)
-        .get();
-        
-    final email = doc.data()?['email'] as String?;
-    if (email == null) throw Exception('No email associated with this account');
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(widget.adminId)
+          .get();
 
-    
-    final maskEmail = _maskEmail(email);
-    
-    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Password reset email sent to $maskEmail'),
-        duration: const Duration(seconds: 5),
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error: $e')),
-    );
-  }
-}
+      final email = doc.data()?['email'] as String?;
+      if (email == null)
+        throw Exception('No email associated with this account');
 
-String _maskEmail(String email) {
-  try {
-    final parts = email.split('@');
-    if (parts.length != 2) return email; 
-    
-    final localPart = parts[0];
-    final domain = parts[1];
-    
-    if (localPart.length <= 3) {
-      return '${'*' * localPart.length}@$domain';
+      final maskEmail = _maskEmail(email);
+
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Password reset email sent to $maskEmail'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
-    
-    final visiblePart = localPart.substring(0, 3);
-    final maskedPart = '*' * (localPart.length - 3);
-    return '$visiblePart$maskedPart@$domain';
-  } catch (e) {
-    return '*****@*****'; 
   }
-}
+
+  String _maskEmail(String email) {
+    try {
+      final parts = email.split('@');
+      if (parts.length != 2) return email;
+
+      final localPart = parts[0];
+      final domain = parts[1];
+
+      if (localPart.length <= 3) {
+        return '${'*' * localPart.length}@$domain';
+      }
+
+      final visiblePart = localPart.substring(0, 3);
+      final maskedPart = '*' * (localPart.length - 3);
+      return '$visiblePart$maskedPart@$domain';
+    } catch (e) {
+      return '*****@*****';
+    }
+  }
+
+/**leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushNamed(context, '/complog');
+          },
+        ), */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -240,6 +265,15 @@ String _maskEmail(String email) {
         title: const Text('Admin Login', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CombinedLogin()),
+            );
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -247,22 +281,23 @@ String _maskEmail(String email) {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              widget.isFirstLogin 
+              widget.isFirstLogin
                   ? 'Enter Default Password'
                   : 'Enter Your Password',
               style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 28, 51, 95)),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 28, 51, 95)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
-              obscureText: _obscurePassword,  
+              obscureText: _obscurePassword,
               decoration: InputDecoration(
-                labelText: widget.isFirstLogin ? 'Default Password' : 'Password',
+                labelText:
+                    widget.isFirstLogin ? 'Default Password' : 'Password',
                 border: const OutlineInputBorder(),
-                 suffixIcon: IconButton(  
+                suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword ? Icons.visibility_off : Icons.visibility,
                     color: Colors.grey,
@@ -281,12 +316,12 @@ String _maskEmail(String email) {
               onPressed: _handleLogin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 253, 200, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 textStyle: const TextStyle(fontSize: 18),
               ),
-              child: Text(
-                widget.isFirstLogin ? 'Continue' : 'Login',
-                style: const TextStyle(color: Colors.black)),
+              child: Text(widget.isFirstLogin ? 'Continue' : 'Login',
+                  style: const TextStyle(color: Colors.black)),
             ),
             if (!widget.isFirstLogin)
               TextButton(
@@ -353,20 +388,18 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
     }
 
     try {
-      
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: newPass);
 
-      
-
-      
       if (userCredential.user != null && !userCredential.user!.emailVerified) {
         await userCredential.user!.sendEmailVerification();
         setState(() => _isEmailSent = true);
       }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Authentication error: ${e.message ?? 'Unknown error'}')),
+        SnackBar(
+            content:
+                Text('Authentication error: ${e.message ?? 'Unknown error'}')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -381,28 +414,30 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
 
     await user.reload();
     if (user.emailVerified) {
-    try {
-      await _updateAdminEmail(_emailController.text.trim());
-      setState(() => _isEmailVerified = true);
-      await Future.delayed(const Duration(seconds: 2));
-      Navigator.popUntil(context, (route) => route.isFirst);
-    } catch (e) {
+      try {
+        await _updateAdminEmail(_emailController.text.trim());
+        setState(() => _isEmailVerified = true);
+        await Future.delayed(const Duration(seconds: 2));
+        Navigator.popUntil(context, (route) => route.isFirst);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update account: $e')),
+        );
+      }
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update account: $e')),
+        const SnackBar(
+            content: Text('Email not verified yet. Please check your inbox.')),
       );
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Email not verified yet. Please check your inbox.')),
-    );
-  }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Account Setup', style: TextStyle(color: Colors.white)),
+        title:
+            const Text('Account Setup', style: TextStyle(color: Colors.white)),
         backgroundColor: _primaryColor,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -471,7 +506,9 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                _obscureConfirmPassword
+                    ? Icons.visibility_off
+                    : Icons.visibility,
                 color: Colors.grey,
               ),
               onPressed: () {
@@ -490,7 +527,8 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
             textStyle: const TextStyle(fontSize: 18),
           ),
-          child: const Text('Verify Email', style: TextStyle(color: Colors.black)),
+          child:
+              const Text('Verify Email', style: TextStyle(color: Colors.black)),
         ),
       ],
     );
@@ -522,35 +560,36 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
             textStyle: const TextStyle(fontSize: 18),
           ),
-          child: const Text('I\'ve Verified My Email', style: TextStyle(color: Colors.black)),
+          child: const Text('I\'ve Verified My Email',
+              style: TextStyle(color: Colors.black)),
         ),
       ],
     );
   }
 
   Widget _buildSuccessScreen() {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Icon(Icons.check_circle, size: 100, color: Colors.green),
-        const SizedBox(height: 20),
-        const Text(
-          'Account Verified!',
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 20),
-        CircularProgressIndicator(
-          color: _accentColor,
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'Redirecting to login...',
-          style: TextStyle(fontSize: 16),
-        ),
-      ],
-    ),
-  );
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle, size: 100, color: Colors.green),
+          const SizedBox(height: 20),
+          const Text(
+            'Account Verified!',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          CircularProgressIndicator(
+            color: _accentColor,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Redirecting to login...',
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
 }
-} 

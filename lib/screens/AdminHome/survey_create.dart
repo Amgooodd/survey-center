@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import '../../widgets/Bottom_bar.dart';
 
 class CreateSurvey extends StatefulWidget {
@@ -18,19 +18,19 @@ class _CreateSurveyState extends State<CreateSurvey> {
   final List<String> _departments = ['All', 'Stat', 'Math', 'CS', 'Chemistry'];
   List<String> _selectedDepartments = [];
   bool _allowMultipleSubmissions = false;
-  DateTime? _deadline; 
-  bool _requireExactGroupCombination = false; 
+  DateTime? _deadline;
+  bool _requireExactGroupCombination = false;
 
   @override
   void initState() {
     super.initState();
-    
-    Firebase.initializeApp().then((_) {
-      
-    }).catchError((error) {
+
+    Firebase.initializeApp().then((_) {}).catchError((error) {
       print("Firebase initialization error: $error");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Firebase initialization failed. Please check your configuration.")),
+        SnackBar(
+            content: Text(
+                "Firebase initialization failed. Please check your configuration.")),
       );
     });
   }
@@ -79,8 +79,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
         'timestamp': FieldValue.serverTimestamp(),
         'departments': _selectedDepartments,
         'allow_multiple_submissions': _allowMultipleSubmissions,
-        'deadline': _deadline, 
-        'require_exact_group_combination': _requireExactGroupCombination, 
+        'deadline': _deadline,
+        'require_exact_group_combination': _requireExactGroupCombination,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Survey added successfully!")),
@@ -112,8 +112,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
       _questions = [];
       _questionCount = 1;
       _selectedDepartments = [];
-      _deadline = null; 
-      _requireExactGroupCombination = false; 
+      _deadline = null;
+      _requireExactGroupCombination = false;
     });
     Navigator.pop(context);
   }
@@ -153,7 +153,9 @@ class _CreateSurveyState extends State<CreateSurvey> {
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushNamed(context, '/firsrforadminn');
+          },
         ),
         centerTitle: true,
       ),
@@ -216,7 +218,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
               SizedBox(height: 30),
               SwitchListTile(
                 title: Text("Exact Group"),
-                subtitle: Text("Only show to students in the exact selected groups"),
+                subtitle:
+                    Text("Only show to students in the exact selected groups"),
                 value: _requireExactGroupCombination,
                 onChanged: (value) {
                   setState(() {

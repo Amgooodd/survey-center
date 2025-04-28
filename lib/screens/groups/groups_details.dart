@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:student_questionnaire/screens/groups/add_student.dart';
-
 import '../../widgets/Bottom_bar.dart';
 
 class GroupDetailsScreen extends StatefulWidget {
@@ -22,7 +21,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushNamed(context, '/groupp');
+          },
         ),
         centerTitle: true,
       ),
@@ -257,7 +258,21 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Edit Student"),
+        title: Text("Edit Student", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    GroupDetailsScreen(groupId: widget.groupId),
+              ),
+            );
+          },
+        ),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -293,10 +308,13 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 textStyle: TextStyle(fontSize: 18),
               ),
               child:
-                  Text("Update Student", style: TextStyle(color: Colors.white)),
+                  Text("Update Student", style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBarWidget(
+        groupp: true,
       ),
     );
   }

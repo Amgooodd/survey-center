@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:student_questionnaire/screens/groups/groups_details.dart';
 
 import '../../widgets/Bottom_bar.dart';
 
@@ -96,7 +97,15 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    GroupDetailsScreen(groupId: widget.groupId),
+              ),
+            );
+          },
         ),
         centerTitle: true,
       ),

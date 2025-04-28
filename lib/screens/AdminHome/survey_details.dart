@@ -327,7 +327,9 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             backgroundColor: const Color.fromARGB(255, 28, 51, 95),
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pushNamed(context, '/firsrforadminn');
+              },
             ),
             centerTitle: true,
           ),

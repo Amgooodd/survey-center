@@ -9,12 +9,14 @@ class SurveyExporter {
 
   Future<void> exportSurveyResponses(String surveyId) async {
     // 1. Load survey questions
-    final surveyDoc = await _firestore.collection('surveys').doc(surveyId).get();
+    final surveyDoc =
+        await _firestore.collection('surveys').doc(surveyId).get();
     final surveyData = surveyDoc.data() as Map<String, dynamic>;
     final surveyName = surveyData['name'] ?? 'Unnamed_Survey';
     // Remove special characters from survey name to make it file-system friendly
-    final safeFileName = surveyName.replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(' ', '_');
-    
+    final safeFileName =
+        surveyName.replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(' ', '_');
+
     final questions = List<Map<String, dynamic>>.from(surveyDoc['questions']);
     final questionTitles = questions.map((q) => q['title'].toString()).toList();
 
@@ -29,7 +31,12 @@ class SurveyExporter {
     final sheet = workbook.worksheets[0];
 
     // 4. Prepare headers
-    final headers = ['Student ID', 'Student Name', 'Student Group', ...questionTitles];
+    final headers = [
+      'Student ID',
+      'Student Name',
+      'Student Group',
+      ...questionTitles
+    ];
     sheet.importList(headers, 1, 1, false); // row 1
 
     // 5. Fill responses
@@ -37,13 +44,18 @@ class SurveyExporter {
     for (var doc in responsesSnapshot.docs) {
       final data = doc.data();
       final studentId = data['studentId'].toString();
-      
+
       // Fetch student name and group from students collection
-      final studentDoc = await _firestore.collection('students').doc(studentId).get();
+      final studentDoc =
+          await _firestore.collection('students').doc(studentId).get();
       final studentData = studentDoc.data();
-      final studentName = studentDoc.exists && studentData != null ? studentData['name'].toString() : 'Unknown';
-      final studentGroup = studentDoc.exists && studentData != null ? studentData['group'].toString() : 'Unknown';
-      
+      final studentName = studentDoc.exists && studentData != null
+          ? studentData['name'].toString()
+          : 'Unknown';
+      final studentGroup = studentDoc.exists && studentData != null
+          ? studentData['group'].toString()
+          : 'Unknown';
+
       final answers = Map<String, dynamic>.from(data['answers']);
       final row = [
         studentId,
