@@ -219,8 +219,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
               Column(
   children: [
     SwitchListTile(
-      title: Text("Exact Group Combination"),
-      subtitle: Text("Require students to be in all selected departments"),
+      title: Text("Exact Department"),
+      subtitle: Text("Show only to students in exactly these departments"),
       value: _requireExactGroupCombination,
       onChanged: _selectedDepartments.contains('All') ? null : (value) {
         setState(() {
@@ -229,17 +229,23 @@ class _CreateSurveyState extends State<CreateSurvey> {
         });
       },
     ),
-    SwitchListTile(
-      title: Text("Show Only Selected Departments"),
-      subtitle: Text("Show to students in exactly these departments (no combinations)"),
-      value: _showOnlySelectedDepartments,
-      onChanged: _selectedDepartments.contains('All') ? null : (value) {
-        setState(() {
-          _showOnlySelectedDepartments = value;
-          if (value) _requireExactGroupCombination = false;
-        });
-      },
-    ),
+  SwitchListTile(
+  title: Text("Separate Departments"),
+  subtitle: Text("Show to each selected department individually"),
+  value: _showOnlySelectedDepartments,
+  onChanged: _selectedDepartments.contains('All') ? null : (value) {
+    if (value == true && _selectedDepartments.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You must select at least 2 departments for this option")),
+      );
+      return;
+    }
+    setState(() {
+      _showOnlySelectedDepartments = value;
+      if (value) _requireExactGroupCombination = false;
+    });
+  },
+),
   ],
 ),
               SizedBox(height: 10),
