@@ -20,6 +20,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
   bool _allowMultipleSubmissions = false;
   DateTime? _deadline;
   bool _requireExactGroupCombination = false;
+  bool _showOnlySelectedDepartments = false;
 
   @override
   void initState() {
@@ -81,6 +82,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
         'allow_multiple_submissions': _allowMultipleSubmissions,
         'deadline': _deadline,
         'require_exact_group_combination': _requireExactGroupCombination,
+        'show_only_selected_departments': _showOnlySelectedDepartments,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Survey added successfully!")),
@@ -216,16 +218,46 @@ class _CreateSurveyState extends State<CreateSurvey> {
                 }).toList(),
               ),
               SizedBox(height: 30),
-              SwitchListTile(
-                title: Text("Exact Group"),
-                subtitle:
-                    Text("Only show to students in the exact selected groups"),
-                value: _requireExactGroupCombination,
-                onChanged: (value) {
-                  setState(() {
-                    _requireExactGroupCombination = value;
-                  });
-                },
+              Column(
+                children: [
+                  SwitchListTile(
+                    title: Text("Exact Department"),
+                    subtitle: Text(
+                        "Show only to students in exactly these departments"),
+                    value: _requireExactGroupCombination,
+                    onChanged: _selectedDepartments.contains('All')
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _requireExactGroupCombination = value;
+                              if (value) _showOnlySelectedDepartments = false;
+                            });
+                          },
+                  ),
+                  SwitchListTile(
+                    title: Text("Separate Departments"),
+                    subtitle:
+                        Text("Show to each selected department individually"),
+                    value: _showOnlySelectedDepartments,
+                    onChanged: _selectedDepartments.contains('All')
+                        ? null
+                        : (value) {
+                            if (value == true &&
+                                _selectedDepartments.length < 2) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        "You must select at least 2 departments for this option")),
+                              );
+                              return;
+                            }
+                            setState(() {
+                              _showOnlySelectedDepartments = value;
+                              if (value) _requireExactGroupCombination = false;
+                            });
+                          },
+                  ),
+                ],
               ),
               SizedBox(height: 10),
               Text(

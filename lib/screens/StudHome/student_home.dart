@@ -44,31 +44,38 @@ class _StudentFormState extends State<StudentForm> {
   }
 
   Future<void> _fetchSurveys() async {
-    List<String> groupComponents = widget.studentGroup
+    List<String> studentGroupComponents = widget.studentGroup
         .split('/')
         .map((e) => e.trim().toUpperCase())
         .toList();
+
     QuerySnapshot snapshot =
         await FirebaseFirestore.instance.collection('surveys').get();
+
     setState(() {
       _surveys = snapshot.docs.where((doc) {
-        List<dynamic> departments = (doc.data() as Map)['departments'] ?? [];
-        bool requireExactGroupCombination =
-            (doc.data() as Map)['require_exact_group_combination'] ?? false;
-        if (requireExactGroupCombination) {
-          List<String> surveyDepartments = departments
-              .map((dept) => dept.toString().trim().toUpperCase())
-              .toList();
-          surveyDepartments.sort();
-          groupComponents.sort();
-          return surveyDepartments.join('/') == groupComponents.join('/');
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        List<dynamic> surveyDepartments = data['departments'] ?? [];
+        bool requireExact = data['require_exact_group_combination'] ?? false;
+        bool showOnly = data['show_only_selected_departments'] ?? false;
+
+        List<String> surveyDeptsUpper = surveyDepartments
+            .map((dept) => dept.toString().trim().toUpperCase())
+            .toList();
+
+        if (surveyDeptsUpper.contains("ALL")) return true;
+
+        if (requireExact) {
+          List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
+          List<String> sortedStudent = List.from(studentGroupComponents)
+            ..sort();
+          return sortedSurvey.join('/') == sortedStudent.join('/');
+        } else if (showOnly) {
+          return studentGroupComponents.length == 1 &&
+              surveyDeptsUpper.contains(studentGroupComponents[0]);
         } else {
-          return departments.any(
-                  (dept) => dept.toString().trim().toUpperCase() == "ALL") ||
-              departments.every(
-                (dept) => groupComponents
-                    .contains(dept.toString().trim().toUpperCase()),
-              );
+          return surveyDeptsUpper
+              .any((surveyDept) => studentGroupComponents.contains(surveyDept));
         }
       }).map((doc) {
         var data = doc.data() as Map<String, dynamic>;
