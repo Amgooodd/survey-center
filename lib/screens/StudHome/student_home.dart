@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:student_questionnaire/screens/Auth/login_page.dart';
 import 'survey_history.dart';
 import 'dart:async';
 
@@ -98,10 +99,8 @@ class _StudentFormState extends State<StudentForm> {
         title: Text("Home for Student", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushNamed(context, '/complog');
-          },
+          icon: Icon(Icons.logout, color: Colors.white),
+          onPressed: () => logout(context),
         ),
         centerTitle: true,
       ),
@@ -624,9 +623,6 @@ class BottomNavigationBarWidget extends StatelessWidget {
             icon: Icons.home,
             label: "Home",
             isSelected: true,
-            onTap: () {
-              Navigator.pushReplacementNamed(context, '/firsrforadminn');
-            },
           ),
           BottomNavItem(
             icon: Icons.history,

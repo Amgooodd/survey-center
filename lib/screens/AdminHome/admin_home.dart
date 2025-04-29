@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:student_questionnaire/screens/Auth/login_page.dart';
 import '../../widgets/Bottom_bar.dart';
 import 'survey_details.dart';
 
@@ -89,10 +90,8 @@ class _FirstForAdminState extends State<FirstForAdmin> {
         title: Text("Home for Admin", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushNamed(context, '/complog');
-          },
+          icon: Icon(Icons.logout, color: Colors.white),
+          onPressed: () => logout(context),
         ),
         centerTitle: true,
       ),

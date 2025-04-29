@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../StudHome/student_home.dart';
 
 class CombinedLogin extends StatefulWidget {
@@ -12,28 +13,59 @@ class CombinedLogin extends StatefulWidget {
 
 class _CombinedLoginState extends State<CombinedLogin> {
   final TextEditingController _idController = TextEditingController();
+  bool _rememberMe = false;
 
-  Future<DocumentSnapshot<Map<String, dynamic>>?> _getAdminDoc(
-      String id) async {
-    try {
-      return await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(id)
-          .get();
-    } catch (e) {
-      print('Error fetching admin doc: $e');
-      return null;
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedId();
+    _checkExistingLogin();
+  }
+
+  Future<void> _checkExistingLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+    if (isLoggedIn) {
+      final userType = prefs.getString('user_type');
+      final userId = prefs.getString('user_id');
+
+      if (userType == 'student' && userId != null) {
+        final studentGroup =
+            prefs.getString('student_group') ?? 'default_group';
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StudentForm(
+              studentId: userId,
+              studentGroup: studentGroup,
+            ),
+          ),
+        );
+      } else if (userType == 'admin' && userId != null) {
+        Navigator.pushReplacementNamed(context, '/firsrforadminn',
+            arguments: userId);
+      }
     }
   }
 
-  Future<bool> _checkStudentId(String id) async {
-    try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('students').doc(id).get();
-      return snapshot.exists;
-    } catch (e) {
-      print('Error checking student ID: $e');
-      return false;
+  Future<void> _loadSavedId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString('saved_id');
+    if (savedId != null) {
+      setState(() {
+        _idController.text = savedId;
+        _rememberMe = true;
+      });
+    }
+  }
+
+  Future<void> _saveId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setString('saved_id', id);
+    } else {
+      await prefs.remove('saved_id');
     }
   }
 
@@ -41,7 +73,9 @@ class _CombinedLoginState extends State<CombinedLogin> {
     final id = _idController.text.trim();
     if (id.isEmpty) return;
 
-    final adminDoc = await _getAdminDoc(id);
+    await _saveId(id);
+    final adminDoc =
+        await FirebaseFirestore.instance.collection('admins').doc(id).get();
     if (adminDoc != null && adminDoc.exists) {
       final hasEmail = (adminDoc.data()?['email'] ?? '').isNotEmpty;
 
@@ -57,11 +91,23 @@ class _CombinedLoginState extends State<CombinedLogin> {
       return;
     }
 
-    final isStudent = await _checkStudentId(id);
+    final studentDoc =
+        await FirebaseFirestore.instance.collection('students').doc(id).get();
+    final isStudent = studentDoc.exists;
     if (isStudent) {
       final snapshot =
           await FirebaseFirestore.instance.collection('students').doc(id).get();
       final studentGroup = snapshot.data()?['group'] ?? 'default_group';
+
+      // Save student login state if remember me is checked
+      if (_rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString('user_type', 'student');
+        await prefs.setString('user_id', id);
+        await prefs.setString('student_group', studentGroup);
+      }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -112,6 +158,19 @@ class _CombinedLoginState extends State<CombinedLogin> {
                   labelText: 'ID', border: OutlineInputBorder()),
               onEditingComplete: _validateId,
             ),
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                ),
+                Text('Remember Me'),
+              ],
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _validateId,
@@ -147,9 +206,46 @@ bool _obscurePassword = true;
 class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final _defaultPassword = 'Abc@123';
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    if (widget.isFirstLogin) return; // Don't load for first login
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedAdminId = prefs.getString('admin_id');
+    final savedPassword = prefs.getString('admin_password');
+
+    if (savedAdminId == widget.adminId && savedPassword != null) {
+      setState(() {
+        _passwordController.text = savedPassword;
+        _rememberMe = true;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials(String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setString('admin_id', widget.adminId);
+      await prefs.setString('admin_password', password);
+    } else {
+      await prefs.remove('admin_id');
+      await prefs.remove('admin_password');
+    }
+  }
 
   void _handleLogin() async {
     final input = _passwordController.text.trim();
+
+    if (!widget.isFirstLogin) {
+      await _saveCredentials(input);
+    }
 
     if (widget.isFirstLogin) {
       if (input != _defaultPassword) {
@@ -188,6 +284,14 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           const SnackBar(content: Text('Please verify your email first')),
         );
         return;
+      }
+
+      // Save admin login state if remember me is checked
+      if (_rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString('user_type', 'admin');
+        await prefs.setString('user_id', widget.adminId);
       }
 
       Navigator.pushReplacementNamed(context, '/firsrforadminn',
@@ -252,12 +356,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     }
   }
 
-/**leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushNamed(context, '/complog');
-          },
-        ), */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -311,6 +409,20 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               ),
               onSubmitted: (_) => _handleLogin(),
             ),
+            if (!widget.isFirstLogin) // Only show for non-first login
+              Row(
+                children: [
+                  Checkbox(
+                    value: _rememberMe,
+                    onChanged: (value) {
+                      setState(() {
+                        _rememberMe = value ?? false;
+                      });
+                    },
+                  ),
+                  Text('Remember Me'),
+                ],
+              ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _handleLogin,
@@ -592,4 +704,16 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
       ),
     );
   }
+}
+
+Future<void> logout(BuildContext context) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear(); // Clear all stored preferences
+  await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => const CombinedLogin()),
+    (route) => false,
+  );
 }
