@@ -55,14 +55,18 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     "Student ID already exists. Please enter a unique ID.")),
           );
         } else {
-          await FirebaseFirestore.instance
-              .collection('students')
-              .doc(studentId)
-              .set({
-            'id': studentId,
-            'name': studentName,
-            'group': groupId,
-          });
+        final group = groupId.trim().toUpperCase();
+final groupComponents = group.split('/')
+    .map((e) => e.trim().toUpperCase())
+    .toList()..sort();
+
+final groupString = groupComponents.join('/');
+
+await FirebaseFirestore.instance.collection('students').doc(studentId).set({
+  'id': studentId,
+  'name': studentName,
+  'group': groupString, 
+});
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Student added successfully!")),
           );

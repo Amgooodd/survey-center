@@ -23,12 +23,14 @@ class _StudentFormState extends State<StudentForm> {
   final Set<String> _selectedDepartments = {};
   final List<String> _departments = ['CS', 'Stat', 'Math'];
   List<Map<String, dynamic>> _surveys = [];
+  List<Map<String, dynamic>> _notifications = [];
   late Timer _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchSurveys();
+    _fetchNotifications();
     _startTimer();
   }
 
@@ -49,27 +51,21 @@ class _StudentFormState extends State<StudentForm> {
         .split('/')
         .map((e) => e.trim().toUpperCase())
         .toList();
-
     QuerySnapshot snapshot =
         await FirebaseFirestore.instance.collection('surveys').get();
-
     setState(() {
       _surveys = snapshot.docs.where((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         List<dynamic> surveyDepartments = data['departments'] ?? [];
         bool requireExact = data['require_exact_group_combination'] ?? false;
         bool showOnly = data['show_only_selected_departments'] ?? false;
-
         List<String> surveyDeptsUpper = surveyDepartments
             .map((dept) => dept.toString().trim().toUpperCase())
             .toList();
-
         if (surveyDeptsUpper.contains("ALL")) return true;
-
         if (requireExact) {
           List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
-          List<String> sortedStudent = List.from(studentGroupComponents)
-            ..sort();
+          List<String> sortedStudent = List.from(studentGroupComponents)..sort();
           return sortedSurvey.join('/') == sortedStudent.join('/');
         } else if (showOnly) {
           return studentGroupComponents.length == 1 &&
@@ -86,10 +82,43 @@ class _StudentFormState extends State<StudentForm> {
     });
   }
 
+  Future<void> _fetchNotifications() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('notifications')
+        .where('studentId', isEqualTo: widget.studentId)
+        .where('isRead', isEqualTo: false)
+        .get();
+    setState(() {
+      _notifications = snapshot.docs.map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    });
+  }
+
   void _clearFilter(String department) {
     setState(() {
       _selectedDepartments.remove(department);
     });
+  }
+
+  void _markNotificationAsRead(String notificationId) async {
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
+    _fetchNotifications(); 
+  }
+
+  void _markAllNotificationsAsRead() async {
+    for (var notification in _notifications) {
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notification['id'])
+          .update({'isRead': true});
+    }
+    _fetchNotifications(); 
   }
 
   @override
@@ -103,6 +132,79 @@ class _StudentFormState extends State<StudentForm> {
           onPressed: () => logout(context),
         ),
         centerTitle: true,
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications),
+                color: Colors.white,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Notifications'),
+                        content: _notifications.isNotEmpty
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ..._notifications.map((notification) {
+                                    return Card(
+                                      margin: EdgeInsets.all(10),
+                                      child: ListTile(
+                                        title: Text(notification['title']),
+                                        subtitle: Text(notification['body']),
+                                        trailing: IconButton(
+                                          icon: Icon(Icons.done),
+                                          onPressed: () => _markNotificationAsRead(notification['id']),
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  SizedBox(height: 10),
+                                  ElevatedButton(
+                                    onPressed: _markAllNotificationsAsRead,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: Text("Mark All as Read"),
+                                  ),
+                                ],
+                              )
+                            : Text('No notifications'),
+                      );
+                    },
+                  );
+                },
+              ),
+              if (_notifications.isNotEmpty)
+                Positioned(
+                  top: 5,
+                  right: 10,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      _notifications.length.toString(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                )),
+            ],
+          ),
+        ],
       ),
       body: ListView(
         children: [
@@ -358,7 +460,6 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       );
       return;
     }
-
     await FirebaseFirestore.instance.collection('students_responses').add({
       'studentId': widget.studentId,
       'surveyId': widget.surveyId,
@@ -602,10 +703,18 @@ class ThankYouPage extends StatelessWidget {
 class BottomNavigationBarWidget extends StatelessWidget {
   final String studentId;
   final String studentGroup;
+  final bool homee;
+  final bool anall;
+  final bool survv;
+  final bool groupp;
   const BottomNavigationBarWidget({
     super.key,
     required this.studentId,
     required this.studentGroup,
+    this.homee = false,
+    this.anall = false,
+    this.survv = false,
+    this.groupp = false,
   });
 
   @override
@@ -622,11 +731,23 @@ class BottomNavigationBarWidget extends StatelessWidget {
           BottomNavItem(
             icon: Icons.home,
             label: "Home",
-            isSelected: true,
+            isSelected: homee,
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentForm(
+                    studentId: studentId,
+                    studentGroup: studentGroup,
+                  ),
+                ),
+              );
+            },
           ),
           BottomNavItem(
             icon: Icons.history,
             label: "Survey History",
+            isSelected: anall,
             onTap: () {
               Navigator.push(
                 context,
@@ -636,6 +757,22 @@ class BottomNavigationBarWidget extends StatelessWidget {
                   ),
                 ),
               );
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.create,
+            label: "Create Survey",
+            isSelected: survv,
+            onTap: () {
+              Navigator.pushNamed(context, '/createsurvv');
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.group,
+            label: "Groups",
+            isSelected: groupp,
+            onTap: () {
+              Navigator.pushNamed(context, '/groupp');
             },
           ),
         ],

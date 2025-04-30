@@ -6,7 +6,6 @@ import '../../widgets/Bottom_bar.dart';
 
 class CreateSurvey extends StatefulWidget {
   const CreateSurvey({super.key});
-
   @override
   _CreateSurveyState createState() => _CreateSurveyState();
 }
@@ -25,7 +24,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
   @override
   void initState() {
     super.initState();
-
     Firebase.initializeApp().then((_) {}).catchError((error) {
       print("Firebase initialization error: $error");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,7 +61,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
         );
         return;
       }
-      await FirebaseFirestore.instance.collection('surveys').add({
+      final surveyRef = await FirebaseFirestore.instance.collection('surveys').add({
         'name': surveyName,
         'questions': questions
             .map((q) => q['type'] == 'multiple_choice'
@@ -78,12 +76,14 @@ class _CreateSurveyState extends State<CreateSurvey> {
                   })
             .toList(),
         'timestamp': FieldValue.serverTimestamp(),
-        'departments': _selectedDepartments,
+        'departments': _selectedDepartments.map((d) => d.toUpperCase()).toList(),
         'allow_multiple_submissions': _allowMultipleSubmissions,
         'deadline': _deadline,
         'require_exact_group_combination': _requireExactGroupCombination,
         'show_only_selected_departments': _showOnlySelectedDepartments,
       });
+      await _createNotificationsForSurvey(
+          surveyRef.id, surveyName, _selectedDepartments);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Survey added successfully!")),
       );
@@ -95,6 +95,63 @@ class _CreateSurveyState extends State<CreateSurvey> {
     }
   }
 
+  
+
+Future<void> _createNotificationsForSurvey(
+    String surveyId, String surveyName, List<String> departments) async {
+  try {
+    List<String> surveyDeptsUpper = departments
+        .map((d) => d.toUpperCase())
+        .where((d) => d != 'ALL')
+        .toList()..sort();
+
+    final studentsQuery = FirebaseFirestore.instance.collection('students');
+    Query studentsQueryFiltered;
+
+    if (departments.contains('All')) {
+      studentsQueryFiltered = studentsQuery;
+    } else {
+      if (_requireExactGroupCombination) {
+        
+        final exactGroup = surveyDeptsUpper.join('/');
+        studentsQueryFiltered = studentsQuery.where('group', isEqualTo: exactGroup);
+      } else if (_showOnlySelectedDepartments) {
+        
+        studentsQueryFiltered = studentsQuery.where('group', whereIn: surveyDeptsUpper);
+      } else {
+        
+        studentsQueryFiltered = studentsQuery.where('departments', arrayContainsAny: surveyDeptsUpper);
+      }
+    }
+
+    QuerySnapshot studentsSnapshot = await studentsQueryFiltered.get();
+
+    if (studentsSnapshot.docs.isEmpty) return;
+
+    final batch = FirebaseFirestore.instance.batch();
+    final now = FieldValue.serverTimestamp();
+
+    for (final studentDoc in studentsSnapshot.docs) {
+      final notificationRef = FirebaseFirestore.instance.collection('notifications').doc();
+      batch.set(notificationRef, {
+        'surveyId': surveyId,
+        'title': ': $surveyName',
+        'body': 'New Survey Available',
+        'departments': departments,
+        'createdAt': now,
+        'isRead': false,
+        'studentId': studentDoc.id,
+        'surveyName': surveyName,
+      });
+    }
+    await batch.commit();
+  } catch (e) {
+    print("Error creating notifications: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to send notifications to students")),
+    );
+  }
+}
   void _finishSurvey() async {
     final String surveyName = _surveyNameController.text.trim();
     if (_selectedDepartments.isEmpty ||

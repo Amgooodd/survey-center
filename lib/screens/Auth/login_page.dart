@@ -76,7 +76,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
     await _saveId(id);
     final adminDoc =
         await FirebaseFirestore.instance.collection('admins').doc(id).get();
-    if (adminDoc != null && adminDoc.exists) {
+    if (adminDoc.exists) {
       final hasEmail = (adminDoc.data()?['email'] ?? '').isNotEmpty;
 
       Navigator.push(
