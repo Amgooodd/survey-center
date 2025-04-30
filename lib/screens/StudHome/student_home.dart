@@ -1,3 +1,4 @@
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -65,7 +66,8 @@ class _StudentFormState extends State<StudentForm> {
         if (surveyDeptsUpper.contains("ALL")) return true;
         if (requireExact) {
           List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
-          List<String> sortedStudent = List.from(studentGroupComponents)..sort();
+          List<String> sortedStudent = List.from(studentGroupComponents)
+            ..sort();
           return sortedSurvey.join('/') == sortedStudent.join('/');
         } else if (showOnly) {
           return studentGroupComponents.length == 1 &&
@@ -108,7 +110,7 @@ class _StudentFormState extends State<StudentForm> {
         .collection('notifications')
         .doc(notificationId)
         .update({'isRead': true});
-    _fetchNotifications(); 
+    _fetchNotifications();
   }
 
   void _markAllNotificationsAsRead() async {
@@ -118,7 +120,7 @@ class _StudentFormState extends State<StudentForm> {
           .doc(notification['id'])
           .update({'isRead': true});
     }
-    _fetchNotifications(); 
+    _fetchNotifications();
   }
 
   @override
@@ -156,7 +158,9 @@ class _StudentFormState extends State<StudentForm> {
                                         subtitle: Text(notification['body']),
                                         trailing: IconButton(
                                           icon: Icon(Icons.done),
-                                          onPressed: () => _markNotificationAsRead(notification['id']),
+                                          onPressed: () =>
+                                              _markNotificationAsRead(
+                                                  notification['id']),
                                           color: Colors.green,
                                         ),
                                       ),
@@ -181,27 +185,27 @@ class _StudentFormState extends State<StudentForm> {
               ),
               if (_notifications.isNotEmpty)
                 Positioned(
-                  top: 5,
-                  right: 10,
-                  child: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      _notifications.length.toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
+                    top: 5,
+                    right: 10,
+                    child: Container(
+                      padding: EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                )),
+                      constraints: BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        _notifications.length.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )),
             ],
           ),
         ],
@@ -400,10 +404,30 @@ class _StudentFormState extends State<StudentForm> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBarWidget(
+      bottomNavigationBar: CurvedNavigationBar(
+        color: const Color.fromARGB(255, 28, 51, 95),
+        buttonBackgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        backgroundColor: Colors.white,
+        items: <Widget>[
+          Icon(
+            Icons.home,
+            size: 30,
+            color: Colors.white,
+          ),
+          Icon(
+            Icons.history,
+            size: 30,
+            color: Colors.white,
+          ),
+        ],
+        onTap: (index) {
+          //Handle button tap
+        },
+      ),
+      /*bottomNavigationBar: BottomNavigationBarWidget(
         studentId: widget.studentId,
         studentGroup: widget.studentGroup,
-      ),
+      ),*/
     );
   }
 }
@@ -700,7 +724,7 @@ class ThankYouPage extends StatelessWidget {
   }
 }
 
-class BottomNavigationBarWidget extends StatelessWidget {
+/*class BottomNavigationBarWidget extends StatelessWidget {
   final String studentId;
   final String studentGroup;
   final bool homee;
@@ -759,22 +783,6 @@ class BottomNavigationBarWidget extends StatelessWidget {
               );
             },
           ),
-          BottomNavItem(
-            icon: Icons.create,
-            label: "Create Survey",
-            isSelected: survv,
-            onTap: () {
-              Navigator.pushNamed(context, '/createsurvv');
-            },
-          ),
-          BottomNavItem(
-            icon: Icons.group,
-            label: "Groups",
-            isSelected: groupp,
-            onTap: () {
-              Navigator.pushNamed(context, '/groupp');
-            },
-          ),
         ],
       ),
     );
@@ -815,3 +823,4 @@ class BottomNavItem extends StatelessWidget {
     );
   }
 }
+*/
