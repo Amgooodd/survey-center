@@ -12,6 +12,7 @@ import 'screens/groups/groups_main.dart';
 import 'screens/groups/groups_details.dart';
 import 'screens/Auth/login_page.dart';
 import 'package:student_questionnaire/deleted/student_login.dart' as login1;
+import 'screens/AdminHome/surveys_analytics.dart';
 
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
@@ -24,13 +25,11 @@ class AppRoutes {
     '/showsurvv': (context) => showsurv(),
     '/groupp': (context) => Group(),
     '/complog': (context) => CombinedLogin(),
-    '/elanall': (context) => anall(),
+    '/elanall': (context) => DataPage(),
     '/welcome': (context) => WelcomeScreen(
         studentId: ModalRoute.of(context)!.settings.arguments as String),
     '/studentlogin': (context) => const login1.StudentLogin(),
-
-    // ignore: equal_keys_in_map
-    '/groupp': (context) => Group(),
+      '/surveysanal': (context) => const SurveyAnalysisPage(surveyId: '',),
     '/groupDetails': (context) => GroupDetailsScreen(
           groupId: ModalRoute.of(context)!.settings.arguments as String,
         )
