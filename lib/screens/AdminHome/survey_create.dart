@@ -133,16 +133,17 @@ Future<void> _createNotificationsForSurvey(
 
     for (final studentDoc in studentsSnapshot.docs) {
       final notificationRef = FirebaseFirestore.instance.collection('notifications').doc();
-      batch.set(notificationRef, {
-        'surveyId': surveyId,
-        'title': ': $surveyName',
-        'body': 'New Survey Available',
-        'departments': departments,
-        'createdAt': now,
-        'isRead': false,
-        'studentId': studentDoc.id,
-        'surveyName': surveyName,
-      });
+    batch.set(notificationRef, {
+  'surveyId': surveyId,
+  'title': 'New Survey: $surveyName',
+  'body': 'A new survey is available for your department',
+  'departments': departments,
+  'createdAt': now,
+  'isRead': false,
+  'studentId': studentDoc.id,
+  'surveyName': surveyName,
+  
+});
     }
     await batch.commit();
   } catch (e) {
