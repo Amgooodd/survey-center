@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:ui';
@@ -24,15 +25,14 @@ class _DataPageState extends State<DataPage> {
   String? errorMessage;
   List<MapEntry<String, int>> sortedDepartments = [];
 
-  static const List<Color> chartColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.red,
-    Colors.purple,
-    Colors.teal,
-    Colors.amber,
-  ];
+   Color getRandomColor() {
+    final random = Random();
+    return Color.fromARGB(255, 
+      random.nextInt(200), 
+      random.nextInt(200), 
+      random.nextInt(200)
+    );
+  }
 
   final GlobalKey _screenshotKey = GlobalKey();
 
@@ -232,6 +232,7 @@ class _DataPageState extends State<DataPage> {
     if (departmentCounts.isEmpty) {
       return const Center(child: Text("No student data available"));
     }
+    final colors = sortedDepartments.map((_) => getRandomColor()).toList(); 
 
     return Scaffold(
       appBar: AppBar(
@@ -287,7 +288,7 @@ class _DataPageState extends State<DataPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Pie Chart Section
+                  
                   Column(
                     children: [
                       const Text(
@@ -310,7 +311,7 @@ class _DataPageState extends State<DataPage> {
                                 value: entry.value.toDouble(),
                                 title:
                                     "${entry.key}\n${percentage.toStringAsFixed(1)}%",
-                                color: chartColors[index % chartColors.length],
+                                color: colors[index],
                                 radius: 80,
                                 titleStyle: const TextStyle(
                                   color: Colors.white,
@@ -324,8 +325,8 @@ class _DataPageState extends State<DataPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30), // Added spacing between charts
-                  // Bar Chart Section
+                  const SizedBox(height: 30), 
+                  
                   Column(
                     children: [
                       const Text(
@@ -349,7 +350,7 @@ class _DataPageState extends State<DataPage> {
                                     toY: entry.value.toDouble(),
                                     width: 20,
                                     color:
-                                        chartColors[index % chartColors.length],
+                                      colors[index],
                                   ),
                                 ],
                               );
