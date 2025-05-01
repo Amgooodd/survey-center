@@ -29,7 +29,7 @@ class _Group extends State<Group> {
         children: [
           Column(
             children: [
-              SizedBox(height: 70),
+              SizedBox(height: 50),
               Expanded(
                 child: GridView.count(
                   padding: EdgeInsets.symmetric(horizontal: 20),
@@ -38,35 +38,35 @@ class _Group extends State<Group> {
                   mainAxisSpacing: 10,
                   children: [
                     SubjectCard(
-                      title: "STAT/CS",
+                      title: "CS/STAT",
                       image: "assets/stat_cs.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
                           '/groupDetails',
-                          arguments: "STAT/CS",
+                          arguments: "CS/STAT",
                         );
                       },
                     ),
                     SubjectCard(
-                      title: "Math/CS",
+                      title: "CS/MATH",
                       image: "assets/math_cs.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
                           '/groupDetails',
-                          arguments: "Math/CS",
+                          arguments: "CS/MATH",
                         );
                       },
                     ),
                     SubjectCard(
-                      title: "Chemistry",
+                      title: "CHEMISTRY",
                       image: "assets/chemistry.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
                           '/groupDetails',
-                          arguments: "Chemistry",
+                          arguments: "CHEMISTRY",
                         );
                       },
                     ),
@@ -81,36 +81,48 @@ class _Group extends State<Group> {
                         );
                       },
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 253, 200, 0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          onPressed: () {
-                            FileUploader().pickFile(context);
-                          },
-                          child: Row(
-                            children: [
-                              Icon(Icons.person_add_alt_1, color: Colors.black),
-                              Text(' Upload Data ',
-                                  style: TextStyle(color: Colors.black)),
-                            ],
-                          ),
-                        ),
-                      ],
+                    SubjectCard(
+                      title: "BIOLOGY",
+                      image: "assets/chemistry.png",
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/groupDetails',
+                          arguments: "BIOLOGY",
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    onPressed: () {
+                      FileUploader().pickFile(context);
+                    },
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_add_alt_1, color: Colors.black),
+                        Text(' Upload Data ',
+                            style: TextStyle(color: Colors.black)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
             ],
           ),
-          SizedBox(height: 40),
+          SizedBox(height: 20),
         ],
       ),
       bottomNavigationBar: BottomNavigationBarWidget(

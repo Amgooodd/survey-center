@@ -270,7 +270,7 @@ class _DataPageState extends State<DataPage> {
                   "NUMBER OF DEPARTMENTS",
                   departmentCounts.length,
                   Icons.school,
-                  Colors.blue,
+                  Colors.orange,
                 ),
               ],
             ),
@@ -287,100 +287,111 @@ class _DataPageState extends State<DataPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Pie Chart Section
-                  Column(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        " PIE CHART",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 300,
-                        child: PieChart(
-                          PieChartData(
-                            sections: sortedDepartments.map((entry) {
-                              final index = sortedDepartments.indexOf(entry);
-                              final percentage =
-                                  (entry.value / totalStudents) * 100;
-                              return PieChartSectionData(
-                                value: entry.value.toDouble(),
-                                title:
-                                    "${entry.key}\n${percentage.toStringAsFixed(1)}%",
-                                color: chartColors[index % chartColors.length],
-                                radius: 80,
-                                titleStyle: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30), // Added spacing between charts
-                  // Bar Chart Section
-                  Column(
-                    children: [
-                      const Text(
-                        " BAR CHART",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 300,
-                        child: BarChart(
-                          BarChartData(
-                            barGroups: sortedDepartments.map((entry) {
-                              final index = sortedDepartments.indexOf(entry);
-                              return BarChartGroupData(
-                                x: index,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: entry.value.toDouble(),
-                                    width: 20,
-                                    color:
-                                        chartColors[index % chartColors.length],
-                                  ),
-                                ],
-                              );
-                            }).toList(),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, _) {
-                                    int index = value.toInt();
-                                    if (index < sortedDepartments.length) {
-                                      return Text(
-                                        sortedDepartments[index].key,
-                                        style: const TextStyle(
-                                          fontSize: 8,
-                                        ),
-                                      );
-                                    }
-                                    return const Text('');
-                                  },
-                                ),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              " PIE CHART",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(),
-                              topTitles: const AxisTitles(),
                             ),
-                          ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              height: 300,
+                              child: PieChart(
+                                PieChartData(
+                                  sections: sortedDepartments.map((entry) {
+                                    final index =
+                                        sortedDepartments.indexOf(entry);
+                                    final percentage =
+                                        (entry.value / totalStudents) * 100;
+                                    return PieChartSectionData(
+                                      value: entry.value.toDouble(),
+                                      title:
+                                          "${entry.key}\n${percentage.toStringAsFixed(1)}%",
+                                      color: chartColors[
+                                          index % chartColors.length],
+                                      radius: 80,
+                                      titleStyle: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              " BAR CHART",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              height: 300,
+                              child: BarChart(
+                                BarChartData(
+                                  barGroups: sortedDepartments.map((entry) {
+                                    final index =
+                                        sortedDepartments.indexOf(entry);
+                                    return BarChartGroupData(
+                                      x: index,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: entry.value.toDouble(),
+                                          width: 20,
+                                          color: chartColors[
+                                              index % chartColors.length],
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                  titlesData: FlTitlesData(
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, _) {
+                                          int index = value.toInt();
+                                          if (index <
+                                              sortedDepartments.length) {
+                                            return Text(
+                                              sortedDepartments[index].key,
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                              ),
+                                            );
+                                          }
+                                          return const Text('');
+                                        },
+                                      ),
+                                    ),
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                      ),
+                                    ),
+                                    rightTitles: const AxisTitles(),
+                                    topTitles: const AxisTitles(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -393,11 +404,11 @@ class _DataPageState extends State<DataPage> {
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: _generatePdf,
-                icon: Icon(Icons.picture_as_pdf, color: Colors.black),
+                icon: const Icon(Icons.picture_as_pdf),
                 label: const Text("Export PDF"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 253, 200, 0),
-                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.deepOrange,
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],

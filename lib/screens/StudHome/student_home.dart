@@ -1,4 +1,3 @@
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -26,6 +25,7 @@ class _StudentFormState extends State<StudentForm> {
   List<Map<String, dynamic>> _surveys = [];
   List<Map<String, dynamic>> _notifications = [];
   late Timer _timer;
+  String _selectedSortOption = 'newest';
 
   @override
   void initState() {
@@ -42,8 +42,9 @@ class _StudentFormState extends State<StudentForm> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       setState(() {});
+      _updateSurveyNotifications();
     });
   }
 
@@ -73,14 +74,37 @@ class _StudentFormState extends State<StudentForm> {
           return studentGroupComponents.length == 1 &&
               surveyDeptsUpper.contains(studentGroupComponents[0]);
         } else {
-          return surveyDeptsUpper
-              .any((surveyDept) => studentGroupComponents.contains(surveyDept));
+          if (surveyDeptsUpper.length == 2) {
+            return studentGroupComponents
+                .every((studentDept) => surveyDeptsUpper.contains(studentDept));
+          } else {
+            return surveyDeptsUpper.any(
+                (surveyDept) => studentGroupComponents.contains(surveyDept));
+          }
         }
       }).map((doc) {
         var data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
         return data;
       }).toList();
+      _surveys.sort((a, b) {
+        switch (_selectedSortOption) {
+          case 'newest':
+            Timestamp aTime = a['timestamp'] ?? Timestamp.now();
+            Timestamp bTime = b['timestamp'] ?? Timestamp.now();
+            return bTime.compareTo(aTime);
+          case 'oldest':
+            Timestamp aTime = a['timestamp'] ?? Timestamp.now();
+            Timestamp bTime = b['timestamp'] ?? Timestamp.now();
+            return aTime.compareTo(bTime);
+          case 'a-z':
+            String aName = a['name']?.toString().toLowerCase() ?? '';
+            String bName = b['name']?.toString().toLowerCase() ?? '';
+            return aName.compareTo(bName);
+          default:
+            return 0;
+        }
+      });
     });
   }
 
@@ -123,14 +147,68 @@ class _StudentFormState extends State<StudentForm> {
     _fetchNotifications();
   }
 
+  Future<void> _updateSurveyNotifications() async {
+    List<Map<String, dynamic>> newNotifications = [];
+    List<String> notificationsToRemove = [];
+
+    for (var survey in _surveys) {
+      DateTime? deadline = survey['deadline'] != null
+          ? (survey['deadline'] as Timestamp).toDate()
+          : null;
+      if (deadline != null) {
+        final difference = deadline.difference(DateTime.now());
+        if (difference.inHours < 1 && difference.inSeconds > 0) {
+          bool isExistingNotification = _notifications.any((notification) =>
+              notification['surveyId'] == survey['id'] &&
+              notification['title'] == 'Survey About to End');
+          if (!isExistingNotification) {
+            newNotifications.add({
+              'studentId': widget.studentId,
+              'surveyId': survey['id'],
+              'title': 'Survey About to End',
+              'body': '${survey['name']} is closing soon!',
+              'deadline': survey['deadline'],
+              'createdAt': Timestamp.now(),
+              'isRead': false,
+            });
+          }
+        } else if (difference.inSeconds <= 0) {
+          _notifications.forEach((notification) {
+            if (notification['surveyId'] == survey['id'] &&
+                (notification['title'] == 'Survey About to End' ||
+                    notification['title'] == 'Survey Expired')) {
+              notificationsToRemove.add(notification['id']);
+            }
+          });
+        }
+      }
+    }
+
+    for (var notification in newNotifications) {
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .add(notification);
+    }
+
+    for (var notificationId in notificationsToRemove) {
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .delete();
+    }
+
+    _fetchNotifications();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Home for Student", style: TextStyle(color: Colors.white)),
+        title: const Text("Home for Student",
+            style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
-          icon: Icon(Icons.logout, color: Colors.white),
+          icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () => logout(context),
         ),
         centerTitle: true,
@@ -138,46 +216,16 @@ class _StudentFormState extends State<StudentForm> {
           Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.notifications),
+                icon: const Icon(Icons.notifications),
                 color: Colors.white,
                 onPressed: () {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Notifications'),
-                        content: _notifications.isNotEmpty
-                            ? Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ..._notifications.map((notification) {
-                                    return Card(
-                                      margin: EdgeInsets.all(10),
-                                      child: ListTile(
-                                        title: Text(notification['title']),
-                                        subtitle: Text(notification['body']),
-                                        trailing: IconButton(
-                                          icon: Icon(Icons.done),
-                                          onPressed: () =>
-                                              _markNotificationAsRead(
-                                                  notification['id']),
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: _markAllNotificationsAsRead,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: Text("Mark All as Read"),
-                                  ),
-                                ],
-                              )
-                            : Text('No notifications'),
+                      return NotificationsDialog(
+                        notifications: _notifications,
+                        markNotificationAsRead: _markNotificationAsRead,
+                        markAllNotificationsAsRead: _markAllNotificationsAsRead,
                       );
                     },
                   );
@@ -185,34 +233,35 @@ class _StudentFormState extends State<StudentForm> {
               ),
               if (_notifications.isNotEmpty)
                 Positioned(
-                    top: 5,
-                    right: 10,
-                    child: Container(
-                      padding: EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
+                  top: 5,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      _notifications.length.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
                       ),
-                      constraints: BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        _notifications.length.toString(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
       ),
       body: ListView(
         children: [
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Positioned(
             top: 158,
             left: 50,
@@ -231,7 +280,7 @@ class _StudentFormState extends State<StudentForm> {
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              prefixIcon: Icon(Icons.search),
+                              prefixIcon: const Icon(Icons.search),
                               hintText: 'Search surveys...',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -242,9 +291,9 @@ class _StudentFormState extends State<StudentForm> {
                             },
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         PopupMenuButton<String>(
-                          icon: Icon(Icons.filter_list),
+                          icon: const Icon(Icons.filter_list),
                           itemBuilder: (context) =>
                               _departments.map((department) {
                             return PopupMenuItem<String>(
@@ -275,7 +324,7 @@ class _StudentFormState extends State<StudentForm> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
                   if (_selectedDepartments.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -284,7 +333,7 @@ class _StudentFormState extends State<StudentForm> {
                         children: _selectedDepartments.map((department) {
                           return Chip(
                             label: Text(department),
-                            deleteIcon: Icon(Icons.close, size: 16),
+                            deleteIcon: const Icon(Icons.close, size: 16),
                             onDeleted: () => _clearFilter(department),
                           );
                         }).toList(),
@@ -296,31 +345,63 @@ class _StudentFormState extends State<StudentForm> {
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(6),
-                      image: DecorationImage(
+                      image: const DecorationImage(
                         image: AssetImage("assets/stat_cs.png"),
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               children: [
-                SizedBox(height: 30),
-                Text(
-                  'Your available surveys',
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Your available surveys',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
+                    ),
+                    DropdownButton<String>(
+                      value: _selectedSortOption,
+                      icon: const Icon(Icons.sort),
+                      underline: const SizedBox(),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'newest',
+                          child: Text('Newest First'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'oldest',
+                          child: Text('Oldest First'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'a-z',
+                          child: Text('A-Z'),
+                        ),
+                      ],
+                      onChanged: (String? value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedSortOption = value;
+                            _fetchSurveys();
+                          });
+                        }
+                      },
+                    ),
+                  ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Container(
                   height: 300,
                   decoration: BoxDecoration(
@@ -328,7 +409,7 @@ class _StudentFormState extends State<StudentForm> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _surveys.isEmpty
-                      ? Center(child: CircularProgressIndicator())
+                      ? const Center(child: CircularProgressIndicator())
                       : ListView.builder(
                           itemCount: _surveys.length,
                           itemBuilder: (context, index) {
@@ -345,10 +426,11 @@ class _StudentFormState extends State<StudentForm> {
                                         .trim()
                                         .toUpperCase());
                             if (isFiltered) {
-                              return SizedBox.shrink();
+                              return const SizedBox.shrink();
                             }
                             return Card(
-                              margin: EdgeInsets.all(10),
+                              margin: const EdgeInsets.all(10),
+                              elevation: 2,
                               child: ListTile(
                                 title:
                                     Text(survey['name'] ?? 'Untitled Survey'),
@@ -364,7 +446,7 @@ class _StudentFormState extends State<StudentForm> {
                                         "Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(deadline)}",
                                       ),
                                     if (isExpired)
-                                      Text(
+                                      const Text(
                                         "This survey has expired.",
                                         style: TextStyle(color: Colors.red),
                                       ),
@@ -374,8 +456,8 @@ class _StudentFormState extends State<StudentForm> {
                                     ? null
                                     : ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              Color.fromARGB(255, 253, 200, 0),
+                                          backgroundColor: const Color.fromARGB(
+                                              255, 253, 200, 0),
                                           foregroundColor: Colors.black,
                                         ),
                                         onPressed: () {
@@ -392,7 +474,7 @@ class _StudentFormState extends State<StudentForm> {
                                             ),
                                           );
                                         },
-                                        child: Text("Start Survey"),
+                                        child: const Text("Start Survey"),
                                       ),
                               ),
                             );
@@ -404,30 +486,133 @@ class _StudentFormState extends State<StudentForm> {
           ),
         ],
       ),
-      bottomNavigationBar: CurvedNavigationBar(
-        color: const Color.fromARGB(255, 28, 51, 95),
-        buttonBackgroundColor: const Color.fromARGB(255, 28, 51, 95),
-        backgroundColor: Colors.white,
-        items: <Widget>[
-          Icon(
-            Icons.home,
-            size: 30,
-            color: Colors.white,
-          ),
-          Icon(
-            Icons.history,
-            size: 30,
-            color: Colors.white,
-          ),
-        ],
-        onTap: (index) {
-          //Handle button tap
-        },
-      ),
-      /*bottomNavigationBar: BottomNavigationBarWidget(
+      bottomNavigationBar: BottomNavigationBarWidget(
         studentId: widget.studentId,
         studentGroup: widget.studentGroup,
-      ),*/
+      ),
+    );
+  }
+}
+
+class NotificationsDialog extends StatefulWidget {
+  final List<Map<String, dynamic>> notifications;
+  final Function(String) markNotificationAsRead;
+  final Function() markAllNotificationsAsRead;
+
+  const NotificationsDialog({
+    super.key,
+    required this.notifications,
+    required this.markNotificationAsRead,
+    required this.markAllNotificationsAsRead,
+  });
+
+  @override
+  _NotificationsDialogState createState() => _NotificationsDialogState();
+}
+
+class _NotificationsDialogState extends State<NotificationsDialog> {
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  String _getRemainingTime(Timestamp? deadlineTimestamp) {
+    if (deadlineTimestamp == null) return 'No deadline';
+
+    final deadline = deadlineTimestamp.toDate();
+    final now = DateTime.now();
+    if (deadline.isBefore(now)) return 'Expired';
+
+    final difference = deadline.difference(now);
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes.remainder(60);
+    final seconds = difference.inSeconds.remainder(60);
+
+    return '${hours}h ${minutes}m ${seconds}s remaining';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.notifications_active, color: Colors.blue),
+          SizedBox(width: 10),
+          Text('Notifications'),
+        ],
+      ),
+      content: widget.notifications.isNotEmpty
+          ? SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: ListView.separated(
+                itemCount: widget.notifications.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final notification = widget.notifications[index];
+                  final date =
+                      (notification['createdAt'] as Timestamp).toDate();
+                  final deadline = notification['deadline'] as Timestamp?;
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: notification['title'] == 'Survey About to End'
+                        ? const Icon(Icons.warning, color: Colors.red)
+                        : const Icon(Icons.campaign, color: Colors.blue),
+                    title: Text(
+                      notification['title'],
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (notification['title'] == 'Survey About to End' &&
+                            deadline != null)
+                          Text(
+                            'Time remaining: ${_getRemainingTime(deadline)}',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        Text(notification['body']),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('MMM dd, yyyy - HH:mm').format(date),
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.done_all, color: Colors.green),
+                      onPressed: () =>
+                          widget.markNotificationAsRead(notification['id']),
+                    ),
+                  );
+                },
+              ),
+            )
+          : const Center(child: Text('No new notifications')),
+      actions: [
+        TextButton(
+          onPressed: widget.markAllNotificationsAsRead,
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.done_all, color: Colors.green),
+              SizedBox(width: 5),
+              Text("Mark All as Read"),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -724,7 +909,7 @@ class ThankYouPage extends StatelessWidget {
   }
 }
 
-/*class BottomNavigationBarWidget extends StatelessWidget {
+class BottomNavigationBarWidget extends StatelessWidget {
   final String studentId;
   final String studentGroup;
   final bool homee;
@@ -823,4 +1008,3 @@ class BottomNavItem extends StatelessWidget {
     );
   }
 }
-*/
