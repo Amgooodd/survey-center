@@ -11,16 +11,16 @@ class SurveyHistoryPage extends StatefulWidget {
 
 class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
   String? _editingResponseId;
-  final Map<String, dynamic> _editedAnswers = {}; 
+  final Map<String, dynamic> _editedAnswers = {};
   final Map<String, TextEditingController> _textControllers = {};
-  final Map<String, bool> _isExpanded = {}; 
+  final Map<String, bool> _isExpanded = {};
 
-  List<String> _existingSurveyIds = []; 
+  List<String> _existingSurveyIds = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchExistingSurveyIds(); 
+    _fetchExistingSurveyIds();
   }
 
   @override
@@ -29,9 +29,9 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
     super.dispose();
   }
 
-  
   Future<void> _fetchExistingSurveyIds() async {
-    final snapshot = await FirebaseFirestore.instance.collection('surveys').get();
+    final snapshot =
+        await FirebaseFirestore.instance.collection('surveys').get();
     setState(() {
       _existingSurveyIds = snapshot.docs.map((doc) => doc.id).toList();
     });
@@ -40,7 +40,6 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
   Future<void> _saveChanges(String responseId, List<dynamic> questions) async {
     final updates = <String, dynamic>{};
 
-    
     questions.forEach((question) {
       if (question['type'] == 'multiple_choice') {
         updates[question['title']] = _editedAnswers[question['title']];
@@ -66,7 +65,17 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Survey History")),
+      appBar: AppBar(
+        title: Text("Responses history", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        centerTitle: true,
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('students_responses')
@@ -85,7 +94,6 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
             return Center(child: Text("No survey responses found."));
           }
 
-          
           final filteredResponses = snapshot.data!.docs.where((response) {
             return _existingSurveyIds.contains(response['surveyId']);
           }).toList();
@@ -102,7 +110,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                     .doc(response['surveyId'])
                     .get(),
                 builder: (context, surveySnapshot) {
-                  if (surveySnapshot.connectionState == ConnectionState.waiting) {
+                  if (surveySnapshot.connectionState ==
+                      ConnectionState.waiting) {
                     return Card(
                       child: ListTile(
                         title: Text("Loading survey..."),
@@ -113,7 +122,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                   if (surveySnapshot.hasError) {
                     return Card(
                       child: ListTile(
-                        title: Text("Error loading survey: ${surveySnapshot.error}"),
+                        title: Text(
+                            "Error loading survey: ${surveySnapshot.error}"),
                       ),
                     );
                   }
@@ -128,7 +138,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
 
                   var survey = surveySnapshot.data!;
                   final questions = survey['questions'] as List<dynamic>? ?? [];
-                  final answers = response['answers'] as Map<String, dynamic>? ?? {};
+                  final answers =
+                      response['answers'] as Map<String, dynamic>? ?? {};
 
                   return Card(
                     child: StatefulBuilder(
@@ -153,30 +164,39 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                                           fontWeight: FontWeight.bold)),
                                   SizedBox(height: 10),
                                   ...questions.map<Widget>((question) {
-                                    final answer = answers[question['title']] ?? "";
+                                    final answer =
+                                        answers[question['title']] ?? "";
 
-                                    
                                     if (_editingResponseId == responseId) {
-                                      if (question['type'] == 'multiple_choice') {
-                                        _editedAnswers[question['title']] = answer;
+                                      if (question['type'] ==
+                                          'multiple_choice') {
+                                        _editedAnswers[question['title']] =
+                                            answer;
                                       } else {
                                         final controllerKey =
                                             '${responseId}${question['title']}';
-                                        if (!_textControllers.containsKey(controllerKey)) {
+                                        if (!_textControllers
+                                            .containsKey(controllerKey)) {
                                           _textControllers[controllerKey] =
-                                              TextEditingController(text: answer);
+                                              TextEditingController(
+                                                  text: answer);
                                         }
                                       }
                                     }
 
                                     return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(question['title'] ?? "Untitled Question",
-                                            style: TextStyle(fontWeight: FontWeight.bold)),
+                                        Text(
+                                            question['title'] ??
+                                                "Untitled Question",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold)),
                                         SizedBox(height: 5),
                                         _editingResponseId == responseId
-                                            ? _buildEditableAnswer(question, answer)
+                                            ? _buildEditableAnswer(
+                                                question, answer)
                                             : Text(answer.toString()),
                                         SizedBox(height: 10),
                                       ],
@@ -202,7 +222,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                                             setState(() {
                                               _editingResponseId = null;
                                               _textControllers.forEach(
-                                                  (key, value) => value.dispose());
+                                                  (key, value) =>
+                                                      value.dispose());
                                               _textControllers.clear();
                                               _editedAnswers.clear();
                                             });
@@ -233,7 +254,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                                           setState(() {});
                                         },
                                         child: Text('Delete',
-                                            style: TextStyle(color: Colors.red)),
+                                            style:
+                                                TextStyle(color: Colors.red)),
                                       ),
                                     ],
                                   ),
@@ -257,7 +279,6 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
   Widget _buildEditableAnswer(
       Map<String, dynamic> question, dynamic currentAnswer) {
     if (question['type'] == 'multiple_choice') {
-      
       if (_editingResponseId != null &&
           !_editedAnswers.containsKey(question['title'])) {
         _editedAnswers[question['title']] = currentAnswer;
@@ -267,18 +288,19 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
         builder: (context, setInnerState) {
           return Column(
             children: question['options']?.map<Widget>((option) {
-              return RadioListTile(
-                title: Text(option),
-                value: option,
-                groupValue: _editedAnswers[question['title']],
-                onChanged: (value) {
-                  setInnerState(() {
-                    _editedAnswers[question['title']] = value;
-                  });
-                },
-                activeColor: Colors.blue,
-              );
-            }).toList() ?? [],
+                  return RadioListTile(
+                    title: Text(option),
+                    value: option,
+                    groupValue: _editedAnswers[question['title']],
+                    onChanged: (value) {
+                      setInnerState(() {
+                        _editedAnswers[question['title']] = value;
+                      });
+                    },
+                    activeColor: Colors.blue,
+                  );
+                }).toList() ??
+                [],
           );
         },
       );

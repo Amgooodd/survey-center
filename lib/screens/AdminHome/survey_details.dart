@@ -31,6 +31,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
       SnackBar(content: Text("Survey has been ended and marked as expired.")),
     );
   }
+
   Future<void> _resetSurvey() async {
     await FirebaseFirestore.instance
         .collection('surveys')
@@ -181,9 +182,140 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
     });
   }
 
+  Future<void> _showAddQuestionDialog(String type) async {
+    TextEditingController questionController = TextEditingController();
+    List<TextEditingController> optionControllers = [];
+    if (type == 'multiple_choice') {
+      optionControllers =
+          List.generate(3, (index) => TextEditingController(text: ''));
+    }
 
-  
-  
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: Text(
+                'Add ${type == 'multiple_choice' ? 'Multiple Choice' : 'Feedback'} Question'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: questionController,
+                    decoration: InputDecoration(labelText: 'Question Text'),
+                  ),
+                  if (type == 'multiple_choice') ...[
+                    SizedBox(height: 10),
+                    ...optionControllers.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: entry.value,
+                              decoration: InputDecoration(
+                                  labelText: 'Option ${index + 1}'),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              setStateDialog(() {
+                                optionControllers.removeAt(index);
+                              });
+                            },
+                          ),
+                        ],
+                      );
+                    }),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: () {
+                            setStateDialog(() {
+                              optionControllers
+                                  .add(TextEditingController(text: ''));
+                            });
+                          },
+                        ),
+                        Text('Add Option'),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final questionText = questionController.text.trim();
+                  if (questionText.isEmpty) return;
+                  List<String> options = [];
+                  if (type == 'multiple_choice') {
+                    options = optionControllers
+                        .map((controller) => controller.text.trim())
+                        .where((text) => text.isNotEmpty)
+                        .toList();
+                    if (options.isEmpty) return;
+                  }
+                  final newQuestion = {
+                    'title': questionText,
+                    'type': type,
+                    if (type == 'multiple_choice') 'options': options,
+                  };
+                  await FirebaseFirestore.instance
+                      .collection('surveys')
+                      .doc(widget.survey.id)
+                      .update({
+                    'questions': FieldValue.arrayUnion([newQuestion]),
+                  });
+                  Navigator.pop(context);
+                },
+                child: Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddQuestionTypeDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.list),
+                title: Text('Multiple Choice'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddQuestionDialog('multiple_choice');
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.feedback),
+                title: Text('Feedback'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddQuestionDialog('feedback');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -281,9 +413,10 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                 SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: _endSurvey,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  child: Text('End Survey',
-                      style: TextStyle(color: Colors.white)),
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  child:
+                      Text('End Survey', style: TextStyle(color: Colors.white)),
                 ),
                 SizedBox(height: 10),
                 ElevatedButton(
@@ -299,19 +432,26 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                   child: Text('Delete Survey',
                       style: TextStyle(color: Colors.white)),
                 ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            SurveyAnalysisPage(surveyId: widget.survey.id),
+                      ),
+                    );
+                  },
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
+                  child: Text('anall', style: TextStyle(color: Colors.white)),
+                ),
               ],
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SurveyAnalysisPage(surveyId: widget.survey.id),
-                ),
-              );
-            },
-            child: Icon(Icons.bar_chart),
+            onPressed: _showAddQuestionTypeDialog,
+            child: Icon(Icons.add),
           ),
         );
       },

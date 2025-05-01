@@ -26,6 +26,7 @@ class _StudentFormState extends State<StudentForm> {
   List<Map<String, dynamic>> _notifications = [];
   late Timer _timer;
   String _selectedSortOption = 'newest';
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -208,7 +209,7 @@ class _StudentFormState extends State<StudentForm> {
             style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
-          icon: const Icon(Icons.logout, color: Colors.white),
+          icon: const Icon(Icons.logout, color: Colors.red),
           onPressed: () => logout(context),
         ),
         centerTitle: true,
@@ -259,9 +260,10 @@ class _StudentFormState extends State<StudentForm> {
           ),
         ],
       ),
+      backgroundColor: Colors.white,
       body: ListView(
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Positioned(
             top: 158,
             left: 50,
@@ -287,11 +289,13 @@ class _StudentFormState extends State<StudentForm> {
                               ),
                             ),
                             onChanged: (value) {
-                              setState(() {});
+                              setState(() {
+                                // Update the search query
+                                _searchQuery = value.toLowerCase();
+                              });
                             },
                           ),
                         ),
-                        const SizedBox(width: 10),
                         PopupMenuButton<String>(
                           icon: const Icon(Icons.filter_list),
                           itemBuilder: (context) =>
@@ -351,135 +355,185 @@ class _StudentFormState extends State<StudentForm> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
               children: [
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
                   children: [
-                    const Text(
-                      'Your available surveys',
-                      style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
-                    ),
-                    DropdownButton<String>(
-                      value: _selectedSortOption,
-                      icon: const Icon(Icons.sort),
-                      underline: const SizedBox(),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'newest',
-                          child: Text('Newest First'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'oldest',
-                          child: Text('Oldest First'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'a-z',
-                          child: Text('A-Z'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Your available surveys :',
+                          style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black),
                         ),
                       ],
-                      onChanged: (String? value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedSortOption = value;
-                            _fetchSurveys();
-                          });
-                        }
-                      },
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Container(
-                  height: 300,
+                  height: 340,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.black),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: _surveys.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          itemCount: _surveys.length,
-                          itemBuilder: (context, index) {
-                            var survey = _surveys[index];
-                            DateTime? deadline = survey['deadline'] != null
-                                ? (survey['deadline'] as Timestamp).toDate()
-                                : null;
-                            bool isExpired = deadline != null &&
-                                deadline.isBefore(DateTime.now());
-                            bool isFiltered = _selectedDepartments.isNotEmpty &&
-                                !_selectedDepartments.contains(
-                                    survey['departments'][0]
-                                        .toString()
-                                        .trim()
-                                        .toUpperCase());
-                            if (isFiltered) {
-                              return const SizedBox.shrink();
-                            }
-                            return Card(
-                              margin: const EdgeInsets.all(10),
-                              elevation: 2,
-                              child: ListTile(
-                                title:
-                                    Text(survey['name'] ?? 'Untitled Survey'),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (survey['departments'] != null)
-                                      Text(
-                                        "Department(s): ${survey['departments'].join(', ')}",
-                                      ),
-                                    if (deadline != null)
-                                      Text(
-                                        "Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(deadline)}",
-                                      ),
-                                    if (isExpired)
-                                      const Text(
-                                        "This survey has expired.",
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                  ],
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0, vertical: 2.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 28, 51, 95),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          height: 40,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              DropdownButton<String>(
+                                value: _selectedSortOption,
+                                icon: const Icon(
+                                  Icons.sort,
+                                  size: 24,
+                                  color: Colors.white,
                                 ),
-                                trailing: isExpired
-                                    ? null
-                                    : ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color.fromARGB(
-                                              255, 253, 200, 0),
-                                          foregroundColor: Colors.black,
-                                        ),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  SurveyQuestionsPage(
-                                                studentId: widget.studentId,
-                                                surveyId: survey['id'],
-                                                studentGroup:
-                                                    widget.studentGroup,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text("Start Survey"),
-                                      ),
+                                underline: const SizedBox(),
+                                dropdownColor:
+                                    const Color.fromARGB(255, 28, 51, 95),
+                                style: const TextStyle(color: Colors.white),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'newest',
+                                    child: Text('Newest First'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'oldest',
+                                    child: Text('Oldest First'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'a-z',
+                                    child: Text('A-Z'),
+                                  ),
+                                ],
+                                onChanged: (String? value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _selectedSortOption = value;
+                                      _fetchSurveys();
+                                    });
+                                  }
+                                },
                               ),
-                            );
-                          },
+                            ],
+                          ),
                         ),
+                      ),
+                      Expanded(
+                        child: _surveys.isEmpty
+                            ? const Center(child: CircularProgressIndicator())
+                            : ListView.builder(
+                                itemCount: _surveys.length,
+                                itemBuilder: (context, index) {
+                                  var survey = _surveys[index];
+                                  DateTime? deadline =
+                                      survey['deadline'] != null
+                                          ? (survey['deadline'] as Timestamp)
+                                              .toDate()
+                                          : null;
+                                  bool isExpired = deadline != null &&
+                                      deadline.isBefore(DateTime.now());
+                                  bool isFilteredByDepartment =
+                                      _selectedDepartments.isNotEmpty &&
+                                          !_selectedDepartments.contains(
+                                              survey['departments'][0]
+                                                  .toString()
+                                                  .trim()
+                                                  .toUpperCase());
+
+                                  bool matchesSearch = _searchQuery.isEmpty ||
+                                      survey['name']
+                                          .toString()
+                                          .toLowerCase()
+                                          .contains(_searchQuery);
+
+                                  if (isFilteredByDepartment ||
+                                      !matchesSearch) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  return Card(
+                                    margin: const EdgeInsets.all(10),
+                                    surfaceTintColor: Colors.black,
+                                    color: Colors.white,
+                                    elevation: 2,
+                                    child: ListTile(
+                                      title: Text(
+                                          survey['name'] ?? 'Untitled Survey'),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (survey['departments'] != null)
+                                            Text(
+                                              "Department(s): ${survey['departments'].join(', ')}",
+                                            ),
+                                          if (deadline != null)
+                                            Text(
+                                              "Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(deadline)}",
+                                            ),
+                                          if (isExpired)
+                                            const Text(
+                                              "This survey has expired.",
+                                              style:
+                                                  TextStyle(color: Colors.red),
+                                            ),
+                                        ],
+                                      ),
+                                      trailing: isExpired
+                                          ? null
+                                          : ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    const Color.fromARGB(
+                                                        255, 253, 200, 0),
+                                                foregroundColor: Colors.black,
+                                              ),
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SurveyQuestionsPage(
+                                                      studentId:
+                                                          widget.studentId,
+                                                      surveyId: survey['id'],
+                                                      studentGroup:
+                                                          widget.studentGroup,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: const Text("Start Survey"),
+                                            ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -489,6 +543,7 @@ class _StudentFormState extends State<StudentForm> {
       bottomNavigationBar: BottomNavigationBarWidget(
         studentId: widget.studentId,
         studentGroup: widget.studentGroup,
+        homee: true,
       ),
     );
   }
@@ -875,12 +930,23 @@ class ThankYouPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Thank You!")),
+      appBar: AppBar(
+        title: Text("Thank you ", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        centerTitle: true,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 80),
+            Icon(Icons.check_circle,
+                color: Color.fromARGB(255, 253, 200, 0), size: 80),
             SizedBox(height: 20),
             Text(
               "Thank you for completing the survey!",
@@ -889,6 +955,9 @@ class ThankYouPage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+              ),
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
@@ -900,7 +969,8 @@ class ThankYouPage extends StatelessWidget {
                   ),
                 );
               },
-              child: Text("Back to Available Surveys"),
+              child: Text("Back to Available Surveys",
+                  style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
@@ -913,17 +983,14 @@ class BottomNavigationBarWidget extends StatelessWidget {
   final String studentId;
   final String studentGroup;
   final bool homee;
-  final bool anall;
-  final bool survv;
-  final bool groupp;
+  final bool hist;
+
   const BottomNavigationBarWidget({
     super.key,
     required this.studentId,
     required this.studentGroup,
     this.homee = false,
-    this.anall = false,
-    this.survv = false,
-    this.groupp = false,
+    this.hist = false,
   });
 
   @override
@@ -956,7 +1023,7 @@ class BottomNavigationBarWidget extends StatelessWidget {
           BottomNavItem(
             icon: Icons.history,
             label: "Survey History",
-            isSelected: anall,
+            isSelected: hist,
             onTap: () {
               Navigator.push(
                 context,
