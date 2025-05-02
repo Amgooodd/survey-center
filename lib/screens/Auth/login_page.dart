@@ -155,7 +155,22 @@ class _CombinedLoginState extends State<CombinedLogin> {
             TextField(
               controller: _idController,
               decoration: const InputDecoration(
-                  labelText: 'ID', border: OutlineInputBorder()),
+                labelText: 'Enter your ID',
+                labelStyle: TextStyle(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: const Color.fromARGB(255, 28, 51, 95),
+                      width: 2.0), // Border when focused
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: const Color.fromARGB(255, 28, 51, 95),
+                      width: 1.0), // Border when enabled but not focused
+                ),
+                border: OutlineInputBorder(),
+              ),
               onEditingComplete: _validateId,
             ),
             Row(
@@ -168,7 +183,12 @@ class _CombinedLoginState extends State<CombinedLogin> {
                     });
                   },
                 ),
-                Text('Remember Me'),
+                Text(
+                  'Remember Me',
+                  style: TextStyle(
+                    color: const Color.fromARGB(255, 28, 51, 95),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -394,6 +414,17 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               decoration: InputDecoration(
                 labelText:
                     widget.isFirstLogin ? 'Default Password' : 'Password',
+                labelStyle: TextStyle(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: const Color.fromARGB(255, 28, 51, 95), width: 2.0),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                      color: const Color.fromARGB(255, 28, 51, 95), width: 1.0),
+                ),
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -438,7 +469,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
             if (!widget.isFirstLogin)
               TextButton(
                 onPressed: _handleForgotPassword,
-                child: const Text('Forgot Password?'),
+                child: const Text(
+                  'Forgot Password?',
+                  style: TextStyle(
+                    color: const Color.fromARGB(255, 28, 51, 95),
+                  ),
+                ),
               ),
           ],
         ),
@@ -583,6 +619,19 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
           controller: _emailController,
           decoration: const InputDecoration(
             labelText: 'Email',
+            labelStyle: TextStyle(
+              color: const Color.fromARGB(255, 28, 51, 95),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                  width: 2.0), // Border when focused
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                  width: 1.0), // Border when enabled but not focused
+            ),
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.email),
           ),
@@ -593,6 +642,19 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
           obscureText: _obscureNewPassword,
           decoration: InputDecoration(
             labelText: 'New Password',
+            labelStyle: TextStyle(
+              color: const Color.fromARGB(255, 28, 51, 95),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                  width: 2.0), // Border when focused
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                  width: 1.0), // Border when enabled but not focused
+            ),
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.lock),
             suffixIcon: IconButton(
@@ -614,6 +676,19 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
           obscureText: _obscureConfirmPassword,
           decoration: InputDecoration(
             labelText: 'Confirm Password',
+            labelStyle: TextStyle(
+              color: const Color.fromARGB(255, 28, 51, 95),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                  width: 2.0), // Border when focused
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 28, 51, 95),
+                  width: 1.0), // Border when enabled but not focused
+            ),
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
@@ -649,7 +724,11 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
   Widget _buildVerificationPending() {
     return Column(
       children: [
-        const Icon(Icons.mark_email_read, size: 80, color: Colors.blue),
+        const Icon(
+          Icons.mark_email_read,
+          size: 80,
+          color: const Color.fromARGB(255, 253, 200, 0),
+        ),
         const SizedBox(height: 20),
         const Text(
           'Check Your Inbox!',

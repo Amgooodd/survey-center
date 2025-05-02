@@ -350,7 +350,7 @@ class _StudentFormState extends State<StudentForm> {
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(6),
                       image: const DecorationImage(
-                        image: AssetImage("assets/stat_cs.png"),
+                        image: AssetImage("assets/studentmain.jpg"),
                         fit: BoxFit.cover,
                       ),
                     ),

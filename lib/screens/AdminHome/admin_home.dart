@@ -90,7 +90,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
         title: Text("Home for Admin", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
-          icon: Icon(Icons.logout, color: Colors.white),
+          icon: Icon(Icons.logout, color: Colors.red),
           onPressed: () => logout(context),
         ),
         centerTitle: true,
@@ -305,7 +305,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                               title: data['name'] ?? 'Unnamed Survey',
                               subtitle: '${questions.length} questions',
                               departments: departments,
-                              image: "assets/ansr.png",
+                              image: "assets/minipic3.jpg",
                               createdAt: formattedTime,
                               survey: doc,
                             );

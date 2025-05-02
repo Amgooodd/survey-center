@@ -25,13 +25,10 @@ class _DataPageState extends State<DataPage> {
   String? errorMessage;
   List<MapEntry<String, int>> sortedDepartments = [];
 
-   Color getRandomColor() {
+  Color getRandomColor() {
     final random = Random();
-    return Color.fromARGB(255, 
-      random.nextInt(200), 
-      random.nextInt(200), 
-      random.nextInt(200)
-    );
+    return Color.fromARGB(
+        255, random.nextInt(200), random.nextInt(200), random.nextInt(200));
   }
 
   final GlobalKey _screenshotKey = GlobalKey();
@@ -232,7 +229,7 @@ class _DataPageState extends State<DataPage> {
     if (departmentCounts.isEmpty) {
       return const Center(child: Text("No student data available"));
     }
-    final colors = sortedDepartments.map((_) => getRandomColor()).toList(); 
+    final colors = sortedDepartments.map((_) => getRandomColor()).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -242,7 +239,7 @@ class _DataPageState extends State<DataPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushNamed(context, '/firsrforadminn');
           },
         ),
         centerTitle: true,
@@ -288,7 +285,6 @@ class _DataPageState extends State<DataPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
                   Column(
                     children: [
                       const Text(
@@ -325,8 +321,7 @@ class _DataPageState extends State<DataPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30), 
-                  
+                  const SizedBox(height: 30),
                   Column(
                     children: [
                       const Text(
@@ -349,8 +344,7 @@ class _DataPageState extends State<DataPage> {
                                   BarChartRodData(
                                     toY: entry.value.toDouble(),
                                     width: 20,
-                                    color:
-                                      colors[index],
+                                    color: colors[index],
                                   ),
                                 ],
                               );

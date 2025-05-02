@@ -351,6 +351,18 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
               },
             ),
             centerTitle: true,
+            actions: [
+              Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete_sweep),
+                    iconSize: 30,
+                    color: Colors.red,
+                    onPressed: _showDeleteConfirmation,
+                  ),
+                ],
+              ),
+            ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -427,12 +439,6 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                 ),
                 SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: _showDeleteConfirmation,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: Text('Delete Survey',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -443,8 +449,9 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                     );
                   },
                   style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
-                  child: Text('anall', style: TextStyle(color: Colors.white)),
+                      ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                  child:
+                      Text('Analatyics', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -458,3 +465,21 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
     );
   }
 }
+
+
+
+/*
+
+FloatingActionButton(
+                onPressed: () async {
+                  await SurveyExporter()
+                      .exportSurveyResponses(widget.survey.id);
+                },
+                backgroundColor: Colors.green,
+                child: Icon(
+                  Icons.download,
+                  color: Colors.white,
+                ),
+              ),
+
+ */

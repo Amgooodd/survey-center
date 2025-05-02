@@ -6,22 +6,30 @@ class FirstImageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/wllppr.png', // Replace with your image path
-              fit: BoxFit.cover,
+          Center(
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(6),
+                image: const DecorationImage(
+                  image: AssetImage("assets/mainpic2.jpg"),
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
           ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 400),
+                SizedBox(height: 450),
                 Text(
-                  'Survey Genie',
+                  'Survey center',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 32,
