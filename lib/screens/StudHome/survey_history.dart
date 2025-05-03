@@ -37,31 +37,6 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
     });
   }
 
-  Future<void> _saveChanges(String responseId, List<dynamic> questions) async {
-    final updates = <String, dynamic>{};
-
-    questions.forEach((question) {
-      if (question['type'] == 'multiple_choice') {
-        updates[question['title']] = _editedAnswers[question['title']];
-      } else {
-        updates[question['title']] =
-            _textControllers['${responseId}${question['title']}']?.text;
-      }
-    });
-
-    await FirebaseFirestore.instance
-        .collection('students_responses')
-        .doc(responseId)
-        .update({'answers': updates});
-
-    setState(() {
-      _editingResponseId = null;
-      _textControllers.forEach((key, value) => value.dispose());
-      _textControllers.clear();
-      _editedAnswers.clear();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
