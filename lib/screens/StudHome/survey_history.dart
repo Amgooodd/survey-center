@@ -142,6 +142,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                       response['answers'] as Map<String, dynamic>? ?? {};
 
                   return Card(
+                    surfaceTintColor: Colors.black,
+                    color: const Color.fromARGB(255, 246, 246, 246),
                     child: StatefulBuilder(
                       builder: (context, setInnerState) {
                         return ExpansionTile(
@@ -273,6 +275,10 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
           );
         },
       ),
+      bottomNavigationBar: BottomNavigationBarWidget(
+        studentId: widget.studentId,
+        hist: true,
+      ),
     );
   }
 
@@ -313,5 +319,93 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
         ),
       );
     }
+  }
+}
+
+class BottomNavigationBarWidget extends StatelessWidget {
+  final String studentId;
+
+  final bool homee;
+  final bool hist;
+
+  const BottomNavigationBarWidget({
+    super.key,
+    required this.studentId,
+    this.homee = false,
+    this.hist = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 28, 51, 95),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          BottomNavItem(
+            icon: Icons.home,
+            label: "Home",
+            isSelected: homee,
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          BottomNavItem(
+            icon: Icons.history,
+            label: "Survey History",
+            isSelected: hist,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SurveyHistoryPage(
+                    studentId: studentId,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  const BottomNavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.isSelected = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon,
+              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isSelected ? Colors.white : Colors.blueGrey,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

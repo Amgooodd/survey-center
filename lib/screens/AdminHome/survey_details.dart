@@ -352,13 +352,74 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             ),
             centerTitle: true,
             actions: [
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.delete_sweep),
-                    iconSize: 30,
-                    color: Colors.red,
-                    onPressed: _showDeleteConfirmation,
+              PopupMenuButton<String>(
+                icon: Icon(Icons.settings, color: Colors.white),
+                onSelected: (value) async {
+                  switch (value) {
+                    case 'download':
+                      await SurveyExporter()
+                          .exportSurveyResponses(widget.survey.id);
+                      break;
+                    case 'end':
+                      await _endSurvey();
+                      break;
+                    case 'reset':
+                      await _resetSurvey();
+                      break;
+                    case 'delete':
+                      _showDeleteConfirmation();
+                      break;
+                    case 'analytics':
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              SurveyAnalysisPage(surveyId: widget.survey.id),
+                        ),
+                      );
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'download',
+                    child: Row(
+                      children: [
+                        Icon(Icons.download, color: Colors.green),
+                        SizedBox(width: 10),
+                        Text('Download responses'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'end',
+                    child: Row(
+                      children: [
+                        Icon(Icons.stop_circle, color: Colors.orange),
+                        SizedBox(width: 10),
+                        Text('End Survey'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'reset',
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh, color: Colors.blue),
+                        SizedBox(width: 10),
+                        Text('Reset Survey'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text('Delete Survey'),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -370,13 +431,18 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                    'Subtitle: ${data['subtitle']?.toString() ?? 'No Subtitle'}'),
-                Text('Departments: $departments'),
-                Text('Created At: $formattedTime'),
+                  'Departments: $departments',
+                  style: TextStyle(fontSize: 15),
+                ),
+                Text(
+                  'Created At: $formattedTime',
+                  style: TextStyle(fontSize: 15),
+                ),
                 SizedBox(height: 20),
                 Text('Questions:',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
                 Expanded(
                   child: ListView.builder(
                     itemCount: questions.length,
@@ -412,53 +478,45 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    await SurveyExporter()
-                        .exportSurveyResponses(widget.survey.id);
-                  },
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: Text('Download responses',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _endSurvey,
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  child:
-                      Text('End Survey', style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _resetSurvey,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  child: Text('reset Survey',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            SurveyAnalysisPage(surveyId: widget.survey.id),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                SurveyAnalysisPage(surveyId: widget.survey.id),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 253, 200, 0),
                       ),
-                    );
-                  },
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                  child:
-                      Text('Analatyics', style: TextStyle(color: Colors.white)),
+                      child: Row(
+                        children: [
+                          Icon(Icons.analytics, color: Colors.black),
+                          SizedBox(width: 10),
+                          Text(
+                            'Analytics',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           floatingActionButton: FloatingActionButton(
+            backgroundColor: const Color.fromARGB(255, 28, 51, 95),
             onPressed: _showAddQuestionTypeDialog,
-            child: Icon(Icons.add),
+            child: Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
           ),
         );
       },
@@ -483,3 +541,55 @@ FloatingActionButton(
               ),
 
  */
+
+
+/* 
+343
+actions: [
+              Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.delete_sweep),
+                    iconSize: 30,
+                    color: Colors.red,
+                    onPressed: _showDeleteConfirmation,
+                  ),
+                ],
+              ),
+            ],
+            */
+
+            /*
+            ElevatedButton(
+                  onPressed: () async {
+                    await SurveyExporter()
+                        .exportSurveyResponses(widget.survey.id);
+                  },
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: Text('Download responses',
+                      style: TextStyle(color: Colors.white)),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _endSurvey,
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  child:
+                      Text('End Survey', style: TextStyle(color: Colors.white)),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: _resetSurvey,
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: Text('reset Survey',
+                      style: TextStyle(color: Colors.white)),
+                ),
+                ElevatedButton(
+                  onPressed: _showDeleteConfirmation,
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: Text('delete Survey',
+                      style: TextStyle(color: Colors.white)),
+                ),
+                SizedBox(height: 10),
+                */

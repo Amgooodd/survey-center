@@ -15,6 +15,7 @@ class SurveyAnalysisPage extends StatefulWidget {
 
 class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
   Map<String, Map<String, int>> questionAnswerCounts = {};
+  Map<String, Map<String, int>> filteredQuestionAnswerCounts = {};
   bool _loading = true;
 
   @override
@@ -38,6 +39,11 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
               (questionAnswerCounts[question]![answer] ?? 0) + 1;
         });
       }
+
+      // Filter questions with more than 3 unique answers
+      filteredQuestionAnswerCounts = Map.from(questionAnswerCounts)
+        ..removeWhere((question, answers) => answers.length > 3);
+
       setState(() {
         _loading = false;
       });
@@ -53,7 +59,7 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
     final workbook = xlsio.Workbook();
     final sheet = workbook.worksheets[0];
     int rowIndex = 1;
-    questionAnswerCounts.forEach((question, answers) {
+    filteredQuestionAnswerCounts.forEach((question, answers) {
       sheet.getRangeByIndex(rowIndex, 1).setText(question);
       rowIndex++;
       sheet.getRangeByIndex(rowIndex, 1).setText("الإجابة");
@@ -259,9 +265,26 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: questionAnswerCounts.entries.map((entry) {
-                  return buildChartsAndTableForQuestion(entry.key, entry.value);
-                }).toList(),
+                children: [
+                  if (filteredQuestionAnswerCounts.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text(
+                          "No answers for this survey found yet please wait for the responses <3",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ...filteredQuestionAnswerCounts.entries.map((entry) {
+                    return buildChartsAndTableForQuestion(
+                        entry.key, entry.value);
+                  }).toList(),
+                ],
               ),
             ),
     );
