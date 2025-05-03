@@ -143,7 +143,8 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
 
                   return Card(
                     surfaceTintColor: Colors.black,
-                    color: const Color.fromARGB(255, 246, 246, 246),
+                    color: Colors.white,
+                    elevation: 2,
                     child: StatefulBuilder(
                       builder: (context, setInnerState) {
                         return ExpansionTile(
@@ -158,6 +159,7 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                             Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text("Your Answers:",
@@ -206,60 +208,7 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                                   }).toList(),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      if (_editingResponseId == responseId)
-                                        TextButton(
-                                          onPressed: () async {
-                                            await _saveChanges(
-                                                responseId, questions);
-                                            setInnerState(() {
-                                              _isExpanded[responseId] = true;
-                                            });
-                                          },
-                                          child: Text('Save'),
-                                        ),
-                                      if (_editingResponseId == responseId)
-                                        TextButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _editingResponseId = null;
-                                              _textControllers.forEach(
-                                                  (key, value) =>
-                                                      value.dispose());
-                                              _textControllers.clear();
-                                              _editedAnswers.clear();
-                                            });
-                                            setInnerState(() {
-                                              _isExpanded[responseId] = true;
-                                            });
-                                          },
-                                          child: Text('Cancel'),
-                                        ),
-                                      if (_editingResponseId != responseId)
-                                        TextButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _editingResponseId = responseId;
-                                            });
-                                            setInnerState(() {
-                                              _isExpanded[responseId] = true;
-                                            });
-                                          },
-                                          child: Text('Edit'),
-                                        ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          await FirebaseFirestore.instance
-                                              .collection('students_responses')
-                                              .doc(responseId)
-                                              .delete();
-                                          setState(() {});
-                                        },
-                                        child: Text('Delete',
-                                            style:
-                                                TextStyle(color: Colors.red)),
-                                      ),
-                                    ],
+                                    children: [],
                                   ),
                                 ],
                               ),
