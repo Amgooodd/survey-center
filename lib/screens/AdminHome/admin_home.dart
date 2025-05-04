@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:student_questionnaire/screens/Auth/login_page.dart';
@@ -43,7 +45,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     });
   }
 
-  // ignore: unused_element
+  
   void _showFilterOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -83,11 +85,16 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+    
+    final Map<String, dynamic>? args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+ final bool isSuperAdmin = (args?['isSuperAdmin']as bool?)  ?? false;
     return Scaffold(
       appBar: AppBar(
-        title: Text("Home for Admin", style: TextStyle(color: Colors.white)),
+        title: Text(
+          isSuperAdmin ? "Home for Super Admin" : "Home for Admin",
+          style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.logout, color: Colors.red),
@@ -95,10 +102,20 @@ class _FirstForAdminState extends State<FirstForAdmin> {
         ),
         centerTitle: true,
       ),
+      
       backgroundColor: Colors.white,
       body: ListView(
+        
         padding: EdgeInsets.zero,
         children: [
+          if (isSuperAdmin)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Super Admin Controls',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
           SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -320,7 +337,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBarWidget(homee: true),
+      bottomNavigationBar: BottomNavigationBarWidget(homee: true ,isSuperAdmin: isSuperAdmin,),
     );
   }
 }

@@ -99,7 +99,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
           await FirebaseFirestore.instance.collection('students').doc(id).get();
       final studentGroup = snapshot.data()?['group'] ?? 'default_group';
 
-      // Save student login state if remember me is checked
+      
       if (_rememberMe) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_logged_in', true);
@@ -162,12 +162,12 @@ class _CombinedLoginState extends State<CombinedLogin> {
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(
                       color: const Color.fromARGB(255, 28, 51, 95),
-                      width: 2.0), // Border when focused
+                      width: 2.0), 
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(
                       color: const Color.fromARGB(255, 28, 51, 95),
-                      width: 1.0), // Border when enabled but not focused
+                      width: 1.0), 
                 ),
                 border: OutlineInputBorder(),
               ),
@@ -225,17 +225,36 @@ bool _obscurePassword = true;
 
 class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
-  final _defaultPassword = 'Abc@123';
+   String? _defaultPassword; 
   bool _rememberMe = false;
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
+     if (widget.isFirstLogin) {
+      _fetchDefaultPassword();
+    }
   }
-
+Future<void> _fetchDefaultPassword() async {
+    try {
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(widget.adminId)
+          .get();
+      if (adminDoc.exists) {
+        setState(() {
+          _defaultPassword = adminDoc.data()?['defaultPassword'] as String?;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching default password: $e')),
+      );
+    }
+  }
   Future<void> _loadSavedCredentials() async {
-    if (widget.isFirstLogin) return; // Don't load for first login
+    if (widget.isFirstLogin) return; 
 
     final prefs = await SharedPreferences.getInstance();
     final savedAdminId = prefs.getString('admin_id');
@@ -267,56 +286,74 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       await _saveCredentials(input);
     }
 
-    if (widget.isFirstLogin) {
-      if (input != _defaultPassword) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Wrong default password!')),
-        );
-        return;
-      }
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PasswordResetPage(adminId: widget.adminId),
-        ),
+  if (widget.isFirstLogin) {
+    if (_defaultPassword == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Default password not configured')),
       );
       return;
     }
 
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(widget.adminId)
-          .get();
-
-      final email = doc.data()?['email'] as String?;
-      if (email == null) throw Exception('Email not found in database');
-
-      final userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: input,
+    if (input != _defaultPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Wrong default password!')),
       );
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PasswordResetPage(adminId: widget.adminId),
+      ),
+    );
+    return;
+  }
 
-      if (!userCredential.user!.emailVerified) {
-        await FirebaseAuth.instance.signOut();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please verify your email first')),
-        );
-        return;
-      }
+    try {
+    final doc = await FirebaseFirestore.instance
+        .collection('admins')
+        .doc(widget.adminId)
+        .get();
 
-      // Save admin login state if remember me is checked
-      if (_rememberMe) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('is_logged_in', true);
-        await prefs.setString('user_type', 'admin');
-        await prefs.setString('user_id', widget.adminId);
-      }
+    final email = doc.data()?['email'] as String?;
+    
+    // ignore: unused_local_variable
+    final defaultPassword = doc.data()?['defaultPassword'] as String?;
+    if (email == null) throw Exception('Email not found in database');
 
-      Navigator.pushReplacementNamed(context, '/firsrforadminn',
-          arguments: widget.adminId);
-    } on FirebaseAuthException catch (e) {
+    final userCredential =
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: input,
+    );
+    bool isSuperAdmin = doc.data()?['isSuperAdmin'] ?? false;
+
+    if (!userCredential.user!.emailVerified) {
+      await FirebaseAuth.instance.signOut();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please verify your email first')),
+      );
+      return;
+    }
+      
+       if (_rememberMe) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString('user_type', 'admin');
+      await prefs.setString('user_id', widget.adminId);
+    }
+
+    
+    Navigator.pushReplacementNamed(
+      context,
+      '/firsrforadminn',
+      arguments: {
+        'adminId': widget.adminId,
+        'isSuperAdmin': isSuperAdmin,
+      },
+    );
+  } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
@@ -440,7 +477,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               ),
               onSubmitted: (_) => _handleLogin(),
             ),
-            if (!widget.isFirstLogin) // Only show for non-first login
+            if (!widget.isFirstLogin) 
               Row(
                 children: [
                   Checkbox(
@@ -625,12 +662,12 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
                   color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 2.0), // Border when focused
+                  width: 2.0), 
             ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
                   color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 1.0), // Border when enabled but not focused
+                  width: 1.0), 
             ),
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.email),
@@ -648,12 +685,12 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
                   color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 2.0), // Border when focused
+                  width: 2.0), 
             ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
                   color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 1.0), // Border when enabled but not focused
+                  width: 1.0), 
             ),
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.lock),
@@ -682,12 +719,12 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
                   color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 2.0), // Border when focused
+                  width: 2.0), 
             ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
                   color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 1.0), // Border when enabled but not focused
+                  width: 1.0), 
             ),
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.lock_outline),
@@ -787,8 +824,8 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
 
 Future<void> logout(BuildContext context) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.clear(); // Clear all stored preferences
-  await FirebaseAuth.instance.signOut(); // Sign out from Firebase
+  await prefs.clear(); 
+  await FirebaseAuth.instance.signOut(); 
 
   Navigator.pushAndRemoveUntil(
     context,
