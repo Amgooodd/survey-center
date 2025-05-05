@@ -68,8 +68,7 @@ class _StudentFormState extends State<StudentForm> {
         if (surveyDeptsUpper.contains("ALL")) return true;
         if (requireExact) {
           List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
-          List<String> sortedStudent = List.from(studentGroupComponents)
-            ..sort();
+          List<String> sortedStudent = List.from(studentGroupComponents)..sort();
           return sortedSurvey.join('/') == sortedStudent.join('/');
         } else if (showOnly) {
           return studentGroupComponents.length == 1 &&
@@ -130,20 +129,22 @@ class _StudentFormState extends State<StudentForm> {
     });
   }
 
+  
   void _markNotificationAsRead(String notificationId) async {
     await FirebaseFirestore.instance
         .collection('notifications')
         .doc(notificationId)
-        .update({'isRead': true});
+        .delete();
     _fetchNotifications();
   }
 
+  
   void _markAllNotificationsAsRead() async {
     for (var notification in _notifications) {
       await FirebaseFirestore.instance
           .collection('notifications')
           .doc(notification['id'])
-          .update({'isRead': true});
+          .delete();
     }
     _fetchNotifications();
   }
@@ -151,7 +152,6 @@ class _StudentFormState extends State<StudentForm> {
   Future<void> _updateSurveyNotifications() async {
     List<Map<String, dynamic>> newNotifications = [];
     List<String> notificationsToRemove = [];
-
     for (var survey in _surveys) {
       DateTime? deadline = survey['deadline'] != null
           ? (survey['deadline'] as Timestamp).toDate()
@@ -184,20 +184,17 @@ class _StudentFormState extends State<StudentForm> {
         }
       }
     }
-
     for (var notification in newNotifications) {
       await FirebaseFirestore.instance
           .collection('notifications')
           .add(notification);
     }
-
     for (var notificationId in notificationsToRemove) {
       await FirebaseFirestore.instance
           .collection('notifications')
           .doc(notificationId)
           .delete();
     }
-
     _fetchNotifications();
   }
 
@@ -205,8 +202,10 @@ class _StudentFormState extends State<StudentForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Home for Student",
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Home for Student",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.red),
@@ -227,6 +226,8 @@ class _StudentFormState extends State<StudentForm> {
                         notifications: _notifications,
                         markNotificationAsRead: _markNotificationAsRead,
                         markAllNotificationsAsRead: _markAllNotificationsAsRead,
+                        studentId: widget.studentId,
+                        studentGroup: widget.studentGroup,
                       );
                     },
                   );
@@ -290,7 +291,6 @@ class _StudentFormState extends State<StudentForm> {
                             ),
                             onChanged: (value) {
                               setState(() {
-                                // Update the search query
                                 _searchQuery = value.toLowerCase();
                               });
                             },
@@ -305,15 +305,14 @@ class _StudentFormState extends State<StudentForm> {
                               child: Row(
                                 children: [
                                   Checkbox(
-                                    value: _selectedDepartments
-                                        .contains(department),
+                                    value:
+                                        _selectedDepartments.contains(department),
                                     onChanged: (value) {
                                       setState(() {
                                         if (value!) {
                                           _selectedDepartments.add(department);
                                         } else {
-                                          _selectedDepartments
-                                              .remove(department);
+                                          _selectedDepartments.remove(department);
                                         }
                                       });
                                       Navigator.pop(context);
@@ -372,9 +371,10 @@ class _StudentFormState extends State<StudentForm> {
                         const Text(
                           'Your available surveys :',
                           style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
                       ],
                     ),
@@ -461,18 +461,15 @@ class _StudentFormState extends State<StudentForm> {
                                                   .toString()
                                                   .trim()
                                                   .toUpperCase());
-
                                   bool matchesSearch = _searchQuery.isEmpty ||
                                       survey['name']
                                           .toString()
                                           .toLowerCase()
                                           .contains(_searchQuery);
-
                                   if (isFilteredByDepartment ||
                                       !matchesSearch) {
                                     return const SizedBox.shrink();
                                   }
-
                                   return Card(
                                     margin: const EdgeInsets.all(10),
                                     surfaceTintColor: Colors.black,
@@ -510,7 +507,23 @@ class _StudentFormState extends State<StudentForm> {
                                                         255, 253, 200, 0),
                                                 foregroundColor: Colors.black,
                                               ),
-                                              onPressed: () {
+                                              onPressed: () async {
+                                                final surveyId = survey['id'];
+                                                await FirebaseFirestore.instance
+                                                    .collection(
+                                                        'notifications')
+                                                    .where('studentId',
+                                                        isEqualTo:
+                                                            widget.studentId)
+                                                    .where('surveyId',
+                                                        isEqualTo: surveyId)
+                                                    .get()
+                                                    .then((snapshot) {
+                                                  for (var doc in snapshot.docs) {
+                                                    doc.reference.delete();
+                                                  }
+                                                });
+
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
@@ -553,12 +566,15 @@ class NotificationsDialog extends StatefulWidget {
   final List<Map<String, dynamic>> notifications;
   final Function(String) markNotificationAsRead;
   final Function() markAllNotificationsAsRead;
-
+  final String studentId;
+  final String studentGroup;
   const NotificationsDialog({
     super.key,
     required this.notifications,
     required this.markNotificationAsRead,
     required this.markAllNotificationsAsRead,
+    required this.studentId,
+    required this.studentGroup,
   });
 
   @override
@@ -582,16 +598,13 @@ class _NotificationsDialogState extends State<NotificationsDialog> {
 
   String _getRemainingTime(Timestamp? deadlineTimestamp) {
     if (deadlineTimestamp == null) return 'No deadline';
-
     final deadline = deadlineTimestamp.toDate();
     final now = DateTime.now();
     if (deadline.isBefore(now)) return 'Expired';
-
     final difference = deadline.difference(now);
     final hours = difference.inHours;
     final minutes = difference.inMinutes.remainder(60);
     final seconds = difference.inSeconds.remainder(60);
-
     return '${hours}h ${minutes}m ${seconds}s remaining';
   }
 
@@ -617,7 +630,6 @@ class _NotificationsDialogState extends State<NotificationsDialog> {
                   final date =
                       (notification['createdAt'] as Timestamp).toDate();
                   final deadline = notification['deadline'] as Timestamp?;
-
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: notification['title'] == 'Survey About to End'
@@ -650,6 +662,18 @@ class _NotificationsDialogState extends State<NotificationsDialog> {
                       onPressed: () =>
                           widget.markNotificationAsRead(notification['id']),
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SurveyQuestionsPage(
+                            studentId: widget.studentId,
+                            surveyId: notification['surveyId'],
+                            studentGroup: widget.studentGroup,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -719,8 +743,9 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   Future<void> _submitAnswers() async {
     if (_answers.length < _questions.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text("Please answer all questions before submitting.")),
+        const SnackBar(
+          content: Text("Please answer all questions before submitting."),
+        ),
       );
       return;
     }
@@ -794,16 +819,17 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
     return (await showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text("Exit Survey?"),
-            content: Text("Your answers will not be saved. Are you sure?"),
+            title: const Text("Exit Survey?"),
+            content:
+                const Text("Your answers will not be saved. Are you sure?"),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: Text("Cancel"),
+                child: const Text("Cancel"),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: Text("Exit"),
+                child: const Text("Exit"),
               ),
             ],
           ),
@@ -818,21 +844,25 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title:
-              Text("Survey Questions", style: TextStyle(color: Colors.white)),
+          title: const Text(
+            "Survey Questions",
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: const Color.fromARGB(255, 28, 51, 95),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
           centerTitle: true,
         ),
         body: isExpired
-            ? Center(child: Text("This survey has expired."))
+            ? const Center(child: Text("This survey has expired."))
             : hasSubmitted
-                ? Center(child: Text("You have already submitted this survey."))
+                ? const Center(
+                    child: Text("You have already submitted this survey."),
+                  )
                 : _questions.isEmpty
-                    ? Center(child: CircularProgressIndicator())
+                    ? const Center(child: CircularProgressIndicator())
                     : Column(
                         children: [
                           LinearProgressIndicator(
@@ -844,9 +874,9 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                               itemBuilder: (context, index) {
                                 var question = _questions[index];
                                 return Card(
-                                  margin: EdgeInsets.all(10),
+                                  margin: const EdgeInsets.all(10),
                                   child: Padding(
-                                    padding: EdgeInsets.all(10),
+                                    padding: const EdgeInsets.all(10),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -854,11 +884,11 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                                         Text(
                                           question['title'] ??
                                               'Untitled Question',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold),
                                         ),
-                                        SizedBox(height: 10),
+                                        const SizedBox(height: 10),
                                         if (question['type'] ==
                                             'multiple_choice')
                                           Column(
@@ -906,14 +936,15 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
             : hasSubmitted
                 ? null
                 : Padding(
-                    padding: EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     child: ElevatedButton(
                       onPressed: _submitAnswers,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 253, 200, 0),
+                        backgroundColor:
+                            const Color.fromARGB(255, 253, 200, 0),
                         foregroundColor: Colors.black,
                       ),
-                      child: Text("Submit Answers"),
+                      child: const Text("Submit Answers"),
                     ),
                   ),
       ),
@@ -924,17 +955,23 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
 class ThankYouPage extends StatelessWidget {
   final String studentId;
   final String studentGroup;
-  const ThankYouPage(
-      {super.key, required this.studentId, required this.studentGroup});
+  const ThankYouPage({
+    super.key,
+    required this.studentId,
+    required this.studentGroup,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Thank you ", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Thank you ",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -945,15 +982,18 @@ class ThankYouPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle,
-                color: Color.fromARGB(255, 253, 200, 0), size: 80),
-            SizedBox(height: 20),
-            Text(
+            const Icon(
+              Icons.check_circle,
+              color: Color.fromARGB(255, 253, 200, 0),
+              size: 80,
+            ),
+            const SizedBox(height: 20),
+            const Text(
               "Thank you for completing the survey!",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 253, 200, 0),
@@ -969,8 +1009,10 @@ class ThankYouPage extends StatelessWidget {
                   ),
                 );
               },
-              child: Text("Back to Available Surveys",
-                  style: TextStyle(color: Colors.black)),
+              child: const Text(
+                "Back to Available Surveys",
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
         ),
@@ -984,7 +1026,6 @@ class BottomNavigationBarWidget extends StatelessWidget {
   final String studentGroup;
   final bool homee;
   final bool hist;
-
   const BottomNavigationBarWidget({
     super.key,
     required this.studentId,
@@ -1061,8 +1102,11 @@ class BottomNavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon,
-              color: isSelected ? Colors.white : Colors.blueGrey, size: 24),
+          Icon(
+            icon,
+            color: isSelected ? Colors.white : Colors.blueGrey,
+            size: 24,
+          ),
           Text(
             label,
             style: TextStyle(

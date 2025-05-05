@@ -13,11 +13,45 @@ class SurveyDetailsScreen extends StatefulWidget {
 
 class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
   Future<void> _deleteSurvey() async {
-    await FirebaseFirestore.instance
-        .collection('surveys')
-        .doc(widget.survey.id)
-        .delete();
-    Navigator.pop(context);
+    try {
+      
+      await FirebaseFirestore.instance
+          .collection('surveys')
+          .doc(widget.survey.id)
+          .delete();
+
+      
+      final notificationQuery = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('surveyId', isEqualTo: widget.survey.id)
+          .get();
+
+      for (var doc in notificationQuery.docs) {
+        await doc.reference.delete();
+      }
+final responsesQuery = await FirebaseFirestore.instance
+        .collection('students_responses')
+        .where('surveyId', isEqualTo: widget.survey.id)
+        .get();
+
+    for (var doc in responsesQuery.docs) {
+      await doc.reference.delete();
+    } 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Survey deleted successfully")),
+      );
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/firsrforadminn',
+        (route) => false,
+      );
+    } catch (e) {
+      print("Error deleting survey: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete survey: $e")),
+      );
+    }
   }
 
   Future<void> _endSurvey() async {
@@ -28,7 +62,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
       'deadline': FieldValue.serverTimestamp(),
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Survey has been ended and marked as expired.")),
+      const SnackBar(content: Text("Survey has been ended and marked as expired.")),
     );
   }
 
@@ -40,7 +74,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
       'deadline': null,
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Survey has been reset and is now active.")),
+      const SnackBar(content: Text("Survey has been reset and is now active.")),
     );
   }
 
@@ -49,19 +83,19 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('Confirm Deletion'),
-          content: Text('Are you sure you want to delete this survey?'),
+          title: const Text('Confirm Deletion'),
+          content: const Text('Are you sure you want to delete this survey?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text('No'),
+              child: const Text('No'),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
                 await _deleteSurvey();
               },
-              child: Text('Yes'),
+              child: const Text('Yes'),
             ),
           ],
         );
@@ -83,16 +117,16 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: Text('Edit Question'),
+            title: const Text('Edit Question'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: questionController,
-                    decoration: InputDecoration(labelText: 'Question Text'),
+                    decoration: const InputDecoration(labelText: 'Question Text'),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   if (question['type'] == 'multiple_choice') ...[
                     ...optionControllers.asMap().entries.map((entry) {
                       int index = entry.key;
@@ -106,7 +140,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
                               setStateDialog(() {
                                 optionControllers.removeAt(index);
@@ -119,15 +153,14 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.add),
+                          icon: const Icon(Icons.add),
                           onPressed: () {
                             setStateDialog(() {
-                              optionControllers
-                                  .add(TextEditingController(text: ''));
+                              optionControllers.add(TextEditingController(text: ''));
                             });
                           },
                         ),
-                        Text('Add Option'),
+                        const Text('Add Option'),
                       ],
                     ),
                   ],
@@ -137,7 +170,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
+                child: const Text('Cancel'),
               ),
               TextButton(
                 onPressed: () async {
@@ -164,7 +197,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                   });
                   Navigator.pop(context);
                 },
-                child: Text('Save'),
+                child: const Text('Save'),
               ),
             ],
           );
@@ -203,10 +236,10 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                 children: [
                   TextField(
                     controller: questionController,
-                    decoration: InputDecoration(labelText: 'Question Text'),
+                    decoration: const InputDecoration(labelText: 'Question Text'),
                   ),
                   if (type == 'multiple_choice') ...[
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     ...optionControllers.asMap().entries.map((entry) {
                       int index = entry.key;
                       return Row(
@@ -219,7 +252,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
                               setStateDialog(() {
                                 optionControllers.removeAt(index);
@@ -232,15 +265,14 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.add),
+                          icon: const Icon(Icons.add),
                           onPressed: () {
                             setStateDialog(() {
-                              optionControllers
-                                  .add(TextEditingController(text: ''));
+                              optionControllers.add(TextEditingController(text: ''));
                             });
                           },
                         ),
-                        Text('Add Option'),
+                        const Text('Add Option'),
                       ],
                     ),
                   ],
@@ -250,7 +282,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
+                child: const Text('Cancel'),
               ),
               TextButton(
                 onPressed: () async {
@@ -277,7 +309,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                   });
                   Navigator.pop(context);
                 },
-                child: Text('Save'),
+                child: const Text('Save'),
               ),
             ],
           );
@@ -295,16 +327,16 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.list),
-                title: Text('Multiple Choice'),
+                leading: const Icon(Icons.list),
+                title: const Text('Multiple Choice'),
                 onTap: () {
                   Navigator.pop(context);
                   _showAddQuestionDialog('multiple_choice');
                 },
               ),
               ListTile(
-                leading: Icon(Icons.feedback),
-                title: Text('Feedback'),
+                leading: const Icon(Icons.feedback),
+                title: const Text('Feedback'),
                 onTap: () {
                   Navigator.pop(context);
                   _showAddQuestionDialog('feedback');
@@ -325,40 +357,49 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
           .doc(widget.survey.id)
           .snapshots(),
       builder: (context, snapshot) {
+        
         if (!snapshot.hasData) {
           return Scaffold(
-            appBar: AppBar(title: Text('Survey Details')),
-            body: Center(child: CircularProgressIndicator()),
+            appBar: AppBar(title: const Text('Survey Details')),
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
-        final data = snapshot.data!.data() as Map<String, dynamic>;
+
+        
+        final document = snapshot.data!;
+        if (!document.exists || document.data() == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Survey Details')),
+            body: const Center(child: Text('This survey has been deleted')),
+          );
+        }
+
+        
+        final data = document.data()! as Map<String, dynamic>;
         final questions = data['questions'] ?? [];
-        final departments =
-            (data['departments'] as List?)?.join(', ') ?? 'Unknown Departments';
+        final departments = (data['departments'] as List?)?.join(', ') ?? 'Unknown Departments';
         final timestamp = data['timestamp'] as Timestamp?;
         final formattedTime = timestamp != null
             ? '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}'
             : 'N/A';
+
         return Scaffold(
           appBar: AppBar(
             title: Text(data['name'] ?? 'Unnamed Survey',
-                style: TextStyle(color: Colors.white)),
+                style: const TextStyle(color: Colors.white)),
             backgroundColor: const Color.fromARGB(255, 28, 51, 95),
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pushNamed(context, '/firsrforadminn');
-              },
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pushNamed(context, '/firsrforadminn'),
             ),
             centerTitle: true,
             actions: [
               PopupMenuButton<String>(
-                icon: Icon(Icons.settings, color: Colors.white),
+                icon: const Icon(Icons.settings, color: Colors.white),
                 onSelected: (value) async {
                   switch (value) {
                     case 'download':
-                      await SurveyExporter()
-                          .exportSurveyResponses(widget.survey.id);
+                      await SurveyExporter().exportSurveyResponses(widget.survey.id);
                       break;
                     case 'end':
                       await _endSurvey();
@@ -381,7 +422,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                   }
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'download',
                     child: Row(
                       children: [
@@ -391,7 +432,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                       ],
                     ),
                   ),
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'end',
                     child: Row(
                       children: [
@@ -401,7 +442,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                       ],
                     ),
                   ),
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'reset',
                     child: Row(
                       children: [
@@ -411,7 +452,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                       ],
                     ),
                   ),
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'delete',
                     child: Row(
                       children: [
@@ -430,19 +471,12 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Departments: $departments',
-                  style: TextStyle(fontSize: 15),
-                ),
-                Text(
-                  'Created At: $formattedTime',
-                  style: TextStyle(fontSize: 15),
-                ),
-                SizedBox(height: 20),
-                Text('Questions:',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
+                Text('Departments: $departments', style: const TextStyle(fontSize: 15)),
+                Text('Created At: $formattedTime', style: const TextStyle(fontSize: 15)),
+                const SizedBox(height: 20),
+                const Text('Questions:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
                 Expanded(
                   child: ListView.builder(
                     itemCount: questions.length,
@@ -452,23 +486,18 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                         child: ListTile(
                           title: Text(question['title'] ?? 'No Question Text'),
                           subtitle: question['type'] == 'multiple_choice'
-                              ? Text(
-                                  'Options: ${question['options'].join(', ')}')
+                              ? Text('Options: ${question['options'].join(', ')}')
                               : null,
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () {
-                                  _showEditQuestionDialog(question);
-                                },
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => _showEditQuestionDialog(question),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  _deleteQuestion(question);
-                                },
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteQuestion(question),
                               ),
                             ],
                           ),
@@ -477,7 +506,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                     },
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -494,7 +523,7 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(255, 253, 200, 0),
                       ),
-                      child: Row(
+                      child: const Row(
                         children: [
                           Icon(Icons.analytics, color: Colors.black),
                           SizedBox(width: 10),
@@ -513,83 +542,10 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
           floatingActionButton: FloatingActionButton(
             backgroundColor: const Color.fromARGB(255, 28, 51, 95),
             onPressed: _showAddQuestionTypeDialog,
-            child: Icon(
-              Icons.add,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.add, color: Colors.white),
           ),
         );
       },
     );
   }
 }
-
-
-
-/*
-
-FloatingActionButton(
-                onPressed: () async {
-                  await SurveyExporter()
-                      .exportSurveyResponses(widget.survey.id);
-                },
-                backgroundColor: Colors.green,
-                child: Icon(
-                  Icons.download,
-                  color: Colors.white,
-                ),
-              ),
-
- */
-
-
-/* 
-343
-actions: [
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.delete_sweep),
-                    iconSize: 30,
-                    color: Colors.red,
-                    onPressed: _showDeleteConfirmation,
-                  ),
-                ],
-              ),
-            ],
-            */
-
-            /*
-            ElevatedButton(
-                  onPressed: () async {
-                    await SurveyExporter()
-                        .exportSurveyResponses(widget.survey.id);
-                  },
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: Text('Download responses',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _endSurvey,
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  child:
-                      Text('End Survey', style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: _resetSurvey,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                  child: Text('reset Survey',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                ElevatedButton(
-                  onPressed: _showDeleteConfirmation,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: Text('delete Survey',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 10),
-                */
