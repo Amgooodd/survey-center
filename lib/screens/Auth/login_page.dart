@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:student_questionnaire/providers/user_provider.dart';
 import '../StudHome/student_home.dart';
 
 class CombinedLogin extends StatefulWidget {
@@ -43,8 +45,19 @@ class _CombinedLoginState extends State<CombinedLogin> {
           ),
         );
       } else if (userType == 'admin' && userId != null) {
-        Navigator.pushReplacementNamed(context, '/firsrforadminn',
-            arguments: userId);
+        // Check if user is super admin
+        final adminDoc = await FirebaseFirestore.instance
+            .collection('admins')
+            .doc(userId)
+            .get();
+        final isSuperAdmin = adminDoc.exists
+            ? (adminDoc.data()?['isSuperAdmin'] ?? false)
+            : false;
+
+        Navigator.pushReplacementNamed(context, '/firsrforadminn', arguments: {
+          'adminId': userId,
+          'isSuperAdmin': isSuperAdmin,
+        });
       }
     }
   }
@@ -99,7 +112,6 @@ class _CombinedLoginState extends State<CombinedLogin> {
           await FirebaseFirestore.instance.collection('students').doc(id).get();
       final studentGroup = snapshot.data()?['group'] ?? 'default_group';
 
-      
       if (_rememberMe) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_logged_in', true);
@@ -161,13 +173,11 @@ class _CombinedLoginState extends State<CombinedLogin> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(
-                      color: const Color.fromARGB(255, 28, 51, 95),
-                      width: 2.0), 
+                      color: const Color.fromARGB(255, 28, 51, 95), width: 2.0),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(
-                      color: const Color.fromARGB(255, 28, 51, 95),
-                      width: 1.0), 
+                      color: const Color.fromARGB(255, 28, 51, 95), width: 1.0),
                 ),
                 border: OutlineInputBorder(),
               ),
@@ -225,18 +235,19 @@ bool _obscurePassword = true;
 
 class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
-   String? _defaultPassword; 
+  String? _defaultPassword;
   bool _rememberMe = false;
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
-     if (widget.isFirstLogin) {
+    if (widget.isFirstLogin) {
       _fetchDefaultPassword();
     }
   }
-Future<void> _fetchDefaultPassword() async {
+
+  Future<void> _fetchDefaultPassword() async {
     try {
       final adminDoc = await FirebaseFirestore.instance
           .collection('admins')
@@ -253,8 +264,9 @@ Future<void> _fetchDefaultPassword() async {
       );
     }
   }
+
   Future<void> _loadSavedCredentials() async {
-    if (widget.isFirstLogin) return; 
+    if (widget.isFirstLogin) return;
 
     final prefs = await SharedPreferences.getInstance();
     final savedAdminId = prefs.getString('admin_id');
@@ -286,74 +298,77 @@ Future<void> _fetchDefaultPassword() async {
       await _saveCredentials(input);
     }
 
-  if (widget.isFirstLogin) {
-    if (_defaultPassword == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Default password not configured')),
-      );
-      return;
-    }
+    if (widget.isFirstLogin) {
+      if (_defaultPassword == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Default password not configured')),
+        );
+        return;
+      }
 
-    if (input != _defaultPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wrong default password!')),
+      if (input != _defaultPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wrong default password!')),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PasswordResetPage(adminId: widget.adminId),
+        ),
       );
       return;
     }
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PasswordResetPage(adminId: widget.adminId),
-      ),
-    );
-    return;
-  }
 
     try {
-    final doc = await FirebaseFirestore.instance
-        .collection('admins')
-        .doc(widget.adminId)
-        .get();
+      final doc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(widget.adminId)
+          .get();
 
-    final email = doc.data()?['email'] as String?;
-    
-    // ignore: unused_local_variable
-    final defaultPassword = doc.data()?['defaultPassword'] as String?;
-    if (email == null) throw Exception('Email not found in database');
+      final email = doc.data()?['email'] as String?;
 
-    final userCredential =
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email,
-      password: input,
-    );
-    bool isSuperAdmin = doc.data()?['isSuperAdmin'] ?? false;
+      // ignore: unused_local_variable
+      final defaultPassword = doc.data()?['defaultPassword'] as String?;
+      if (email == null) throw Exception('Email not found in database');
 
-    if (!userCredential.user!.emailVerified) {
-      await FirebaseAuth.instance.signOut();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please verify your email first')),
+      final userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: input,
       );
-      return;
-    }
-      
-       if (_rememberMe) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('is_logged_in', true);
-      await prefs.setString('user_type', 'admin');
-      await prefs.setString('user_id', widget.adminId);
-    }
+      bool isSuperAdmin = doc.data()?['isSuperAdmin'] ?? false;
 
-    
-    Navigator.pushReplacementNamed(
-      context,
-      '/firsrforadminn',
-      arguments: {
-        'adminId': widget.adminId,
-        'isSuperAdmin': isSuperAdmin,
-      },
-    );
-  } on FirebaseAuthException catch (e) {
+      if (!userCredential.user!.emailVerified) {
+        await FirebaseAuth.instance.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please verify your email first')),
+        );
+        return;
+      }
+
+      if (_rememberMe) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        await prefs.setString('user_type', 'admin');
+        await prefs.setString('user_id', widget.adminId);
+      }
+
+      // Update the UserProvider with the super admin status
+      Provider.of<UserProvider>(context, listen: false)
+          .setSuperAdmin(isSuperAdmin);
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/firsrforadminn',
+        arguments: {
+          'adminId': widget.adminId,
+          'isSuperAdmin': isSuperAdmin,
+        },
+      );
+    } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
@@ -477,7 +492,7 @@ Future<void> _fetchDefaultPassword() async {
               ),
               onSubmitted: (_) => _handleLogin(),
             ),
-            if (!widget.isFirstLogin) 
+            if (!widget.isFirstLogin)
               Row(
                 children: [
                   Checkbox(
@@ -661,13 +676,11 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 2.0), 
+                  color: const Color.fromARGB(255, 28, 51, 95), width: 2.0),
             ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 1.0), 
+                  color: const Color.fromARGB(255, 28, 51, 95), width: 1.0),
             ),
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.email),
@@ -684,13 +697,11 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 2.0), 
+                  color: const Color.fromARGB(255, 28, 51, 95), width: 2.0),
             ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 1.0), 
+                  color: const Color.fromARGB(255, 28, 51, 95), width: 1.0),
             ),
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.lock),
@@ -718,13 +729,11 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 2.0), 
+                  color: const Color.fromARGB(255, 28, 51, 95), width: 2.0),
             ),
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(
-                  color: const Color.fromARGB(255, 28, 51, 95),
-                  width: 1.0), 
+                  color: const Color.fromARGB(255, 28, 51, 95), width: 1.0),
             ),
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.lock_outline),
@@ -824,8 +833,8 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
 
 Future<void> logout(BuildContext context) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.clear(); 
-  await FirebaseAuth.instance.signOut(); 
+  await prefs.clear();
+  await FirebaseAuth.instance.signOut();
 
   Navigator.pushAndRemoveUntil(
     context,

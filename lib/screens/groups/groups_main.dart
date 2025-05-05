@@ -19,7 +19,10 @@ class _Group extends State<Group> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pushNamed(context, '/firsrforadminn');
+            Navigator.popUntil(
+              context,
+              (route) => route.settings.name == '/firsrforadminn',
+            );
           },
         ),
         centerTitle: true,

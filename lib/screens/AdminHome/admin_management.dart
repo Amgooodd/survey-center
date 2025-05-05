@@ -17,26 +17,23 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _idController = TextEditingController(); 
+  final TextEditingController _idController = TextEditingController();
 
   Future<void> _addAdmin() async {
     if (!_formKey.currentState!.validate()) return;
 
     final adminId = _idController.text.trim();
     final name = _nameController.text.trim();
-    final password = _generatePassword(); 
+    final password = _generatePassword();
 
     try {
-      
       final authEmail = '$adminId@admin.com';
 
-      
       await _auth.createUserWithEmailAndPassword(
         email: authEmail,
         password: password,
       );
 
-      
       await _firestore.collection('admins').doc(adminId).set({
         'id': adminId,
         'name': name,
@@ -59,11 +56,12 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   }
 
   String _generatePassword() {
-    const chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890!@#\$%^&*';
+    const chars =
+        'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890!@#\$%^&*';
     final rnd = Random.secure();
     return String.fromCharCodes(Iterable.generate(
       12,
-          (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
+      (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
     ));
   }
 
@@ -82,17 +80,42 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Management'),
+        title: const Text(
+          'Admin Management',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.popUntil(
+              context,
+              (route) => route.settings.name == '/firsrforadminn',
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: const Text('Add Admin'),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        icon: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        label: const Text(
+          'Add Admin',
+          style: TextStyle(color: Colors.white),
+        ),
         onPressed: () => showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Add New Admin'),
+            title: const Text(
+              'Add New Admin',
+              style: TextStyle(
+                color: Color.fromARGB(255, 28, 51, 95),
+              ),
+            ),
             content: SingleChildScrollView(
               child: Form(
                 key: _formKey,
@@ -103,6 +126,19 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                       controller: _idController,
                       decoration: const InputDecoration(
                         labelText: 'Admin ID (Manual Entry)',
+                        labelStyle: TextStyle(
+                          color: const Color.fromARGB(255, 28, 51, 95),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: const Color.fromARGB(255, 28, 51, 95),
+                              width: 2.0),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: const Color.fromARGB(255, 28, 51, 95),
+                              width: 1.0),
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
@@ -117,6 +153,19 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                       controller: _nameController,
                       decoration: const InputDecoration(
                         labelText: 'Full Name',
+                        labelStyle: TextStyle(
+                          color: const Color.fromARGB(255, 28, 51, 95),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: const Color.fromARGB(255, 28, 51, 95),
+                              width: 2.0),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                              color: const Color.fromARGB(255, 28, 51, 95),
+                              width: 1.0),
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
@@ -133,16 +182,24 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 253, 200, 0)),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     Navigator.pop(context);
                     _addAdmin();
                   }
                 },
-                child: const Text('Create Admin'),
+                child: const Text(
+                  'Create Admin',
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
             ],
           ),
@@ -151,7 +208,10 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<QuerySnapshot>(
-          stream: _firestore.collection('admins').orderBy('createdAt', descending: true).snapshots(),
+          stream: _firestore
+              .collection('admins')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -190,7 +250,8 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                             ),
                             if (!(data['isSuperAdmin'] ?? false))
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _deleteAdmin(doc.id),
                               ),
                           ],
@@ -205,12 +266,14 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                           children: [
                             Chip(
                               label: Text(
-                                data['isSuperAdmin'] ?? false ? 'Super Admin' : 'Admin',
-                                style: const TextStyle(color: Colors.white),
+                                data['isSuperAdmin'] ?? false
+                                    ? 'Super Admin'
+                                    : 'Admin',
+                                style: const TextStyle(color: Colors.black),
                               ),
                               backgroundColor: data['isSuperAdmin'] ?? false
                                   ? Colors.deepPurple
-                                  : Colors.blue,
+                                  : Color.fromARGB(255, 253, 200, 0),
                             ),
                           ],
                         ),
@@ -223,9 +286,12 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                           const SizedBox(height: 4),
                           InkWell(
                             onTap: () {
-                              Clipboard.setData(ClipboardData(text: data['defaultPassword']));
+                              Clipboard.setData(
+                                  ClipboardData(text: data['defaultPassword']));
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Password copied to clipboard')),
+                                const SnackBar(
+                                    content:
+                                        Text('Password copied to clipboard')),
                               );
                             },
                             child: Container(
@@ -235,11 +301,13 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     data['defaultPassword'],
-                                    style: const TextStyle(fontFamily: 'monospace'),
+                                    style: const TextStyle(
+                                        fontFamily: 'monospace'),
                                   ),
                                   const Icon(Icons.copy, size: 18),
                                 ],

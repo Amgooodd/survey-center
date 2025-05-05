@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -61,6 +62,12 @@ class _CreateSurveyState extends State<CreateSurvey> {
         );
         return;
       }
+
+      // Get the current user ID - you'll need to replace this with your actual user ID
+      // This could come from your authentication system or a stored value
+      String currentUserId =
+          FirebaseAuth.instance.currentUser?.uid ?? "unknown";
+
       final surveyRef =
           await FirebaseFirestore.instance.collection('surveys').add({
         'name': surveyName,
@@ -83,6 +90,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
         'deadline': _deadline,
         'require_exact_group_combination': _requireExactGroupCombination,
         'show_only_selected_departments': _showOnlySelectedDepartments,
+        'madyby': currentUserId, // Add the user ID who created the survey
       });
       await _createNotificationsForSurvey(
           surveyRef.id, surveyName, _selectedDepartments);
@@ -178,7 +186,10 @@ class _CreateSurveyState extends State<CreateSurvey> {
       _requireExactGroupCombination = false;
     });
 
-    Navigator.pushNamed(context, '/firsrforadminn');
+    Navigator.popUntil(
+      context,
+      (route) => route.settings.name == '/firsrforadminn',
+    );
   }
 
   Future<void> _selectDeadline() async {
@@ -217,7 +228,10 @@ class _CreateSurveyState extends State<CreateSurvey> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pushNamed(context, '/firsrforadminn');
+            Navigator.popUntil(
+              context,
+              (route) => route.settings.name == '/firsrforadminn',
+            );
           },
         ),
         centerTitle: true,

@@ -1,19 +1,18 @@
-// ignore_for_file: unused_element
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:student_questionnaire/screens/Auth/login_page.dart';
 import '../../widgets/Bottom_bar.dart';
 import 'survey_details.dart';
 
-class FirstForAdmin extends StatefulWidget {
-  const FirstForAdmin({super.key});
+class regAdmin extends StatefulWidget {
+  const regAdmin({super.key});
 
   @override
-  _FirstForAdminState createState() => _FirstForAdminState();
+  _regAdminState createState() => _regAdminState();
 }
 
-class _FirstForAdminState extends State<FirstForAdmin> {
+class _regAdminState extends State<regAdmin> {
   late Stream<List<DocumentSnapshot>> _surveysStream;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -45,6 +44,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     });
   }
 
+  // ignore: unused_element
   void _showFilterOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -86,13 +86,9 @@ class _FirstForAdminState extends State<FirstForAdmin> {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic>? args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final bool isSuperAdmin = (args?['isSuperAdmin'] as bool?) ?? false;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isSuperAdmin ? "Home for Super Admin" : "Home for Admin",
-            style: TextStyle(color: Colors.white)),
+        title: Text("Home for Admin", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.logout, color: Colors.red),
@@ -104,14 +100,6 @@ class _FirstForAdminState extends State<FirstForAdmin> {
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          if (isSuperAdmin)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Super Admin Controls',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
           SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -274,6 +262,10 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                           return Center(child: Text("No surveys available."));
                         }
 
+                        // Get current user ID - replace this with your actual user ID retrieval
+                        String currentUserId =
+                            FirebaseAuth.instance.currentUser?.uid ?? "";
+
                         final filteredSurveys = snapshot.data!.where((doc) {
                           final data = doc.data() as Map<String, dynamic>;
                           final name =
@@ -283,7 +275,11 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                                       ?.map((d) => d.toString().toLowerCase())
                                       .toSet() ??
                                   {};
-                          return name.contains(_searchQuery) &&
+                          final createdBy = data['madyby']?.toString() ?? '';
+
+                          // Only show surveys created by the current user
+                          return createdBy == currentUserId &&
+                              name.contains(_searchQuery) &&
                               (_selectedDepartments.isEmpty ||
                                   _selectedDepartments.every((dep) =>
                                       departments.contains(dep.toLowerCase())));
