@@ -12,48 +12,64 @@ class SurveyDetailsScreen extends StatefulWidget {
 }
 
 class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
-  Future<void> _deleteSurvey() async {
-    try {
-      
-      await FirebaseFirestore.instance
-          .collection('surveys')
-          .doc(widget.survey.id)
-          .delete();
+Future<void> _deleteSurvey() async {
+  try {
+    
+    final surveyDoc = await FirebaseFirestore.instance
+        .collection('surveys')
+        .doc(widget.survey.id)
+        .get();
 
+    if (surveyDoc.exists) {
       
-      final notificationQuery = await FirebaseFirestore.instance
-          .collection('notifications')
-          .where('surveyId', isEqualTo: widget.survey.id)
-          .get();
+      await FirebaseFirestore.instance.collection('backup')
+          .doc(widget.survey.id) 
+          .set({
+        ...?surveyDoc.data(), 
+        'backupTimestamp': FieldValue.serverTimestamp(), 
+      });
+    }
 
-      for (var doc in notificationQuery.docs) {
-        await doc.reference.delete();
-      }
-final responsesQuery = await FirebaseFirestore.instance
+    
+    await FirebaseFirestore.instance
+        .collection('surveys')
+        .doc(widget.survey.id)
+        .delete();
+
+    
+    final notificationQuery = await FirebaseFirestore.instance
+        .collection('notifications')
+        .where('surveyId', isEqualTo: widget.survey.id)
+        .get();
+    for (var doc in notificationQuery.docs) {
+      await doc.reference.delete();
+    }
+
+    
+    final responsesQuery = await FirebaseFirestore.instance
         .collection('students_responses')
         .where('surveyId', isEqualTo: widget.survey.id)
         .get();
-
     for (var doc in responsesQuery.docs) {
       await doc.reference.delete();
-    } 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Survey deleted successfully")),
-      );
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/firsrforadminn',
-        (route) => false,
-      );
-    } catch (e) {
-      print("Error deleting survey: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to delete survey: $e")),
-      );
     }
-  }
 
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Survey deleted successfully")),
+    );
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/firsrforadminn',
+      (route) => false,
+    );
+  } catch (e) {
+    print("Error deleting survey: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to delete survey: $e")),
+    );
+  }
+}
   Future<void> _endSurvey() async {
     await FirebaseFirestore.instance
         .collection('surveys')

@@ -3,6 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:student_questionnaire/screens/AdminHome/recycle_bin_page.dart';
 import 'package:student_questionnaire/screens/Auth/login_page.dart';
 import '../../widgets/Bottom_bar.dart';
 import 'survey_details.dart';
@@ -46,60 +47,48 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     });
   }
 
-  // ignore: unused_element
-  void _showFilterOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Filter by Departments'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _departments.map((department) {
-              return CheckboxListTile(
-                title: Text(department),
-                value: _selectedDepartments.contains(department),
-                onChanged: (value) {
-                  setState(() {
-                    if (value!) {
-                      _selectedDepartments.add(department);
-                    } else {
-                      _selectedDepartments.remove(department);
-                    }
-                  });
-                  Navigator.pop(context);
-                  _showFilterOptions(context);
-                },
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Done'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  
+  
 
 Future<void> _deleteAllInCollection(String collectionName) async {
-  final collection = FirebaseFirestore.instance.collection(collectionName);
-  final snapshot = await collection.get();
-  for (var doc in snapshot.docs) {
-    await doc.reference.delete();
+  if (collectionName == 'surveys') {
+    
+    final surveysCollection = FirebaseFirestore.instance.collection('surveys');
+    final snapshot = await surveysCollection.get();
+    for (var doc in snapshot.docs) {
+      
+      await FirebaseFirestore.instance.collection('backup').doc(doc.id).set({
+        ...doc.data(), 
+        'backupTimestamp': FieldValue.serverTimestamp(), 
+      });
+
+      
+      await doc.reference.delete();
+    }
+  } else {
+    
+    final collection = FirebaseFirestore.instance.collection(collectionName);
+    final snapshot = await collection.get();
+    for (var doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 }
 
 
 Future<void> _resetAllSurveys() async {
   try {
+    
     await _deleteAllInCollection('surveys');
-    await _deleteAllInCollection('notifications');
-    await _deleteAllInCollection('students_responses');
+
+    
+    await FirebaseFirestore.instance.collection('notifications').get().then((snap) => 
+      Future.wait(snap.docs.map((doc) => doc.reference.delete()))
+    );
+    await FirebaseFirestore.instance.collection('students_responses').get().then((snap) => 
+      Future.wait(snap.docs.map((doc) => doc.reference.delete()))
+    );
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("All surveys and related data deleted")),
     );
@@ -110,8 +99,6 @@ Future<void> _resetAllSurveys() async {
     );
   }
 }
-
-
 Future<void> _deleteAllStudents() async {
   try {
     await _deleteAllInCollection('students');
@@ -129,10 +116,14 @@ Future<void> _deleteAllStudents() async {
 
 Future<void> _resetEverything() async {
   try {
+    
     await _deleteAllInCollection('surveys');
+
+    
     await _deleteAllInCollection('notifications');
     await _deleteAllInCollection('students_responses');
-    await _deleteAllInCollection('students');
+    await _deleteAllInCollection('students'); 
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("All data reset except admins")),
     );
@@ -162,7 +153,7 @@ Future<void> _resetEverything() async {
          actions: isSuperAdmin 
     ? [
         PopupMenuButton<String>(
-          icon: Icon(Icons.settings),
+          icon: Icon(Icons.settings,color: Colors.white),
           onSelected: (value) async {
   bool? confirmedFirst = false;
   bool? confirmedSecond = false;
@@ -374,6 +365,17 @@ Future<void> _resetEverything() async {
             ),
           ],
         ),
+         IconButton(
+      icon: Icon(Icons.delete_outline, size: 30 ,color: Colors.red), 
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecycleBinPage(), 
+          ),
+        );
+      },
+    ),
       ]
     : [], 
       ),
@@ -382,13 +384,7 @@ Future<void> _resetEverything() async {
         padding: EdgeInsets.zero,
         children: [
           if (isSuperAdmin)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Super Admin Controls',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
+            
           SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
