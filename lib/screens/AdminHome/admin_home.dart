@@ -1,5 +1,6 @@
 // ignore_for_file: unused_element
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:student_questionnaire/screens/Auth/login_page.dart';
@@ -274,6 +275,9 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                           return Center(child: Text("No surveys available."));
                         }
 
+                        String currentUserId =
+                            FirebaseAuth.instance.currentUser?.uid ?? "";
+
                         final filteredSurveys = snapshot.data!.where((doc) {
                           final data = doc.data() as Map<String, dynamic>;
                           final name =
@@ -283,10 +287,23 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                                       ?.map((d) => d.toString().toLowerCase())
                                       .toSet() ??
                                   {};
-                          return name.contains(_searchQuery) &&
-                              (_selectedDepartments.isEmpty ||
-                                  _selectedDepartments.every((dep) =>
-                                      departments.contains(dep.toLowerCase())));
+                          final createdBy = data['madyby']?.toString() ?? '';
+                          if (!isSuperAdmin) {
+                            // Only show surveys created by the current user
+                            return createdBy == currentUserId &&
+                                name.contains(_searchQuery) &&
+                                (_selectedDepartments.isEmpty ||
+                                    _selectedDepartments.every((dep) =>
+                                        departments
+                                            .contains(dep.toLowerCase())));
+                          } else {
+                            // For super admin, show all surveys
+                            return name.contains(_searchQuery) &&
+                                (_selectedDepartments.isEmpty ||
+                                    _selectedDepartments.every((dep) =>
+                                        departments
+                                            .contains(dep.toLowerCase())));
+                          }
                         }).toList();
 
                         filteredSurveys.sort((a, b) {
