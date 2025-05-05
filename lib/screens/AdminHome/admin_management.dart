@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 
 class AdminManagementScreen extends StatefulWidget {
@@ -14,26 +13,17 @@ class AdminManagementScreen extends StatefulWidget {
 
 class _AdminManagementScreenState extends State<AdminManagementScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _idController = TextEditingController();
 
   Future<void> _addAdmin() async {
     if (!_formKey.currentState!.validate()) return;
-
     final adminId = _idController.text.trim();
     final name = _nameController.text.trim();
     final password = _generatePassword();
 
     try {
-      final authEmail = '$adminId@admin.com';
-
-      await _auth.createUserWithEmailAndPassword(
-        email: authEmail,
-        password: password,
-      );
-
       await _firestore.collection('admins').doc(adminId).set({
         'id': adminId,
         'name': name,
@@ -41,11 +31,9 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         'isSuperAdmin': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Admin $name created successfully')),
       );
-
       _idController.clear();
       _nameController.clear();
     } catch (e) {
@@ -72,7 +60,6 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       );
       return;
     }
-
     await _firestore.collection('admins').doc(adminId).delete();
   }
 
@@ -127,16 +114,16 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Admin ID (Manual Entry)',
                         labelStyle: TextStyle(
-                          color: const Color.fromARGB(255, 28, 51, 95),
+                          color: Color.fromARGB(255, 28, 51, 95),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 28, 51, 95),
+                              color: Color.fromARGB(255, 28, 51, 95),
                               width: 2.0),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 28, 51, 95),
+                              color: Color.fromARGB(255, 28, 51, 95),
                               width: 1.0),
                         ),
                         border: OutlineInputBorder(),
@@ -154,16 +141,16 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Full Name',
                         labelStyle: TextStyle(
-                          color: const Color.fromARGB(255, 28, 51, 95),
+                          color: Color.fromARGB(255, 28, 51, 95),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 28, 51, 95),
+                              color: Color.fromARGB(255, 28, 51, 95),
                               width: 2.0),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 28, 51, 95),
+                              color: Color.fromARGB(255, 28, 51, 95),
                               width: 1.0),
                         ),
                         border: OutlineInputBorder(),
