@@ -171,7 +171,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
               ),
             );
 
-            // If user confirmed, proceed with logout
+            
             if (confirmed == true) {
               logout(context);
             }
@@ -707,49 +707,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                   ),
                 ),
                 SizedBox(height: 20),
-                /*Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      onPressed: () async {
-                        await Navigator.pushNamed(context, '/createsurvv');
-                        _refreshSurveys();
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.add, color: Colors.white),
-                          Text(' Create Survey',
-                              style: TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 28, 51, 95),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/groupp');
-                  },
-                  child: Row(
-                    children: [
-                      Icon(Icons.remove_red_eye, color: Colors.white),
-                      Text(' View groups',
-                          style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                ),*/
+               
 
                 Text(
                   'Your available surveys :',
@@ -880,18 +838,28 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                               }).toList();
 
                               filteredSurveys.sort((a, b) {
-                                final aData = a.data() as Map<String, dynamic>;
-                                final bData = b.data() as Map<String, dynamic>;
-                                final aTimestamp =
-                                    aData['timestamp'] as Timestamp?;
-                                final bTimestamp =
-                                    bData['timestamp'] as Timestamp?;
-                                if (aTimestamp == null || bTimestamp == null) {
-                                  return 0;
-                                }
-                                return bTimestamp.compareTo(aTimestamp);
-                              });
+  final aData = a.data() as Map<String, dynamic>;
+  final bData = b.data() as Map<String, dynamic>;
 
+  switch (_selectedSortOption) {
+    case 'newest':
+      final aTimestamp = aData['timestamp'] as Timestamp?;
+      final bTimestamp = bData['timestamp'] as Timestamp?;
+      if (aTimestamp == null || bTimestamp == null) return 0;
+      return bTimestamp.compareTo(aTimestamp);
+    case 'oldest':
+      final aTimestamp = aData['timestamp'] as Timestamp?;
+      final bTimestamp = bData['timestamp'] as Timestamp?;
+      if (aTimestamp == null || bTimestamp == null) return 0;
+      return aTimestamp.compareTo(bTimestamp);
+    case 'a-z':
+      final aName = aData['name']?.toString().toLowerCase() ?? '';
+      final bName = bData['name']?.toString().toLowerCase() ?? '';
+      return aName.compareTo(bName);
+    default:
+      return 0;
+  }
+});
                               return Column(
                                 children: filteredSurveys.map((doc) {
                                   final data =
