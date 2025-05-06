@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:student_questionnaire/screens/AdminHome/admin_management.dart';
-import 'package:student_questionnaire/screens/AdminHome/adminreg.dart';
 import 'package:student_questionnaire/screens/AdminHome/anal.dart';
 import 'screens/AppStart/Splash_screen.dart';
 import 'screens/AppStart/Welcome_screen.dart';
@@ -25,7 +24,6 @@ class AppRoutes {
     '/firsrforadminn': (context) => FirstForAdmin(),
     '/createsurvv': (context) => CreateSurvey(),
     '/showsurvv': (context) => showsurv(),
-    '/reggadmin': (context) => regAdmin(),
     '/groupp': (context) => Group(),
     '/complog': (context) => CombinedLogin(),
     '/elanall': (context) => DataPage(),

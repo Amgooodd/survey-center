@@ -68,7 +68,8 @@ class _StudentFormState extends State<StudentForm> {
         if (surveyDeptsUpper.contains("ALL")) return true;
         if (requireExact) {
           List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
-          List<String> sortedStudent = List.from(studentGroupComponents)..sort();
+          List<String> sortedStudent = List.from(studentGroupComponents)
+            ..sort();
           return sortedSurvey.join('/') == sortedStudent.join('/');
         } else if (showOnly) {
           return studentGroupComponents.length == 1 &&
@@ -129,7 +130,6 @@ class _StudentFormState extends State<StudentForm> {
     });
   }
 
-  
   void _markNotificationAsRead(String notificationId) async {
     await FirebaseFirestore.instance
         .collection('notifications')
@@ -138,7 +138,6 @@ class _StudentFormState extends State<StudentForm> {
     _fetchNotifications();
   }
 
-  
   void _markAllNotificationsAsRead() async {
     for (var notification in _notifications) {
       await FirebaseFirestore.instance
@@ -203,13 +202,54 @@ class _StudentFormState extends State<StudentForm> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Home for Student",
+          "Home",
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: const Icon(Icons.logout, color: Colors.red),
-          onPressed: () => logout(context),
+          onPressed: () async {
+            bool? confirmed = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(
+                  "Confirm Logout",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Text(
+                  "Are you sure you want to log out?",
+                  style: TextStyle(color: Colors.black),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      "Cancel",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      "Yes, Logout",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+
+            // If user confirmed, proceed with logout
+            if (confirmed == true) {
+              logout(context);
+            }
+          },
         ),
         centerTitle: true,
         actions: [
@@ -263,99 +303,115 @@ class _StudentFormState extends State<StudentForm> {
       ),
       backgroundColor: Colors.white,
       body: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          const SizedBox(height: 10),
-          Positioned(
-            top: 158,
-            left: 50,
-            child: Container(
-              width: 390,
-              height: 257,
-              color: Colors.white,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.search),
-                              hintText: 'Search surveys...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value.toLowerCase();
-                              });
-                            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          hintText: 'Search surveys...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.filter_list),
-                          itemBuilder: (context) =>
-                              _departments.map((department) {
-                            return PopupMenuItem<String>(
-                              value: department,
-                              child: Row(
-                                children: [
-                                  Checkbox(
-                                    value:
-                                        _selectedDepartments.contains(department),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        if (value!) {
-                                          _selectedDepartments.add(department);
-                                        } else {
-                                          _selectedDepartments.remove(department);
-                                        }
-                                      });
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                  Text(department),
-                                ],
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.filter_list),
+                      itemBuilder: (context) => _departments.map((department) {
+                        return PopupMenuItem<String>(
+                          value: department,
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value:
+                                    _selectedDepartments.contains(department),
+                                onChanged: (value) {
+                                  setState(() {
+                                    if (value!) {
+                                      _selectedDepartments.add(department);
+                                    } else {
+                                      _selectedDepartments.remove(department);
+                                    }
+                                  });
+                                  Navigator.pop(context);
+                                },
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                              Text(department),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                if (_selectedDepartments.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Wrap(
+                      spacing: 8.0,
+                      children: _selectedDepartments.map((department) {
+                        return Chip(
+                          label: Text(department),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () => _clearFilter(department),
+                        );
+                      }).toList(),
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  if (_selectedDepartments.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Wrap(
-                        spacing: 8.0,
-                        children: _selectedDepartments.map((department) {
-                          return Chip(
-                            label: Text(department),
-                            deleteIcon: const Icon(Icons.close, size: 16),
-                            onDeleted: () => _clearFilter(department),
-                          );
-                        }).toList(),
+                SizedBox(height: 10),
+                FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('students')
+                      .doc(widget.studentId)
+                      .get(),
+                  builder: (context, snapshot) {
+                    String studentName = "Student";
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final data =
+                          snapshot.data!.data() as Map<String, dynamic>?;
+                      studentName = data?['name'] ?? "Student";
+                    }
+                    return Text(
+                      'Welcome $studentName',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(255, 28, 51, 95),
                       ),
-                    ),
-                  Container(
-                    width: 350,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(6),
-                      image: const DecorationImage(
-                        image: AssetImage("assets/studentmain.jpg"),
-                        fit: BoxFit.cover,
-                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 10),
+                Container(
+                  width: 350,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(6),
+                    image: const DecorationImage(
+                      image: AssetImage("assets/studentmain.jpg"),
+                      fit: BoxFit.cover,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
@@ -373,14 +429,14 @@ class _StudentFormState extends State<StudentForm> {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: const Color.fromARGB(255, 28, 51, 95),
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Container(
                   height: 340,
                   decoration: BoxDecoration(
@@ -471,13 +527,23 @@ class _StudentFormState extends State<StudentForm> {
                                     return const SizedBox.shrink();
                                   }
                                   return Card(
+                                    shadowColor: Colors.black.withOpacity(0.3),
                                     margin: const EdgeInsets.all(10),
-                                    surfaceTintColor: Colors.black,
-                                    color: Colors.white,
-                                    elevation: 2,
+                                    color: const Color.fromARGB(
+                                        255, 205, 205, 205),
+                                    elevation: 4,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
                                     child: ListTile(
                                       title: Text(
-                                          survey['name'] ?? 'Untitled Survey'),
+                                        survey['name'] ?? 'Untitled Survey',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color.fromARGB(
+                                              255, 28, 51, 95),
+                                        ),
+                                      ),
                                       subtitle: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -485,6 +551,10 @@ class _StudentFormState extends State<StudentForm> {
                                           if (survey['departments'] != null)
                                             Text(
                                               "Department(s): ${survey['departments'].join(', ')}",
+                                              style: TextStyle(
+                                                color: const Color.fromARGB(
+                                                    255, 70, 94, 105),
+                                              ),
                                             ),
                                           if (deadline != null)
                                             Text(
@@ -510,8 +580,7 @@ class _StudentFormState extends State<StudentForm> {
                                               onPressed: () async {
                                                 final surveyId = survey['id'];
                                                 await FirebaseFirestore.instance
-                                                    .collection(
-                                                        'notifications')
+                                                    .collection('notifications')
                                                     .where('studentId',
                                                         isEqualTo:
                                                             widget.studentId)
@@ -519,7 +588,8 @@ class _StudentFormState extends State<StudentForm> {
                                                         isEqualTo: surveyId)
                                                     .get()
                                                     .then((snapshot) {
-                                                  for (var doc in snapshot.docs) {
+                                                  for (var doc
+                                                      in snapshot.docs) {
                                                     doc.reference.delete();
                                                   }
                                                 });
@@ -940,8 +1010,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                     child: ElevatedButton(
                       onPressed: _submitAnswers,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 253, 200, 0),
+                        backgroundColor: const Color.fromARGB(255, 253, 200, 0),
                         foregroundColor: Colors.black,
                       ),
                       child: const Text("Submit Answers"),

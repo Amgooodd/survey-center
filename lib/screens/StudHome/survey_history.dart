@@ -117,13 +117,18 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                       response['answers'] as Map<String, dynamic>? ?? {};
 
                   return Card(
-                    surfaceTintColor: Colors.black,
-                    color: Colors.white,
+                    color: const Color.fromARGB(255, 205, 205, 205),
                     elevation: 2,
                     child: StatefulBuilder(
                       builder: (context, setInnerState) {
                         return ExpansionTile(
-                          title: Text(survey['name'] ?? "Unnamed Survey"),
+                          title: Text(
+                            survey['name'] ?? "Unnamed Survey",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromARGB(255, 28, 51, 95),
+                            ),
+                          ),
                           initiallyExpanded: _isExpanded[responseId] ?? false,
                           onExpansionChanged: (bool expanded) {
                             setInnerState(() {

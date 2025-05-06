@@ -1,5 +1,3 @@
-
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,7 +18,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final Set<String> _selectedDepartments = {};
-
+  String _selectedSortOption = 'newest';
   final List<String> _departments = ['CS', 'Stat', 'Math'];
 
   @override
@@ -30,15 +28,7 @@ class _FirstForAdminState extends State<FirstForAdmin> {
         .collection('surveys')
         .snapshots()
         .map((snapshot) => snapshot.docs);
-  }
-
-  void _refreshSurveys() {
-    setState(() {
-      _surveysStream = FirebaseFirestore.instance
-          .collection('surveys')
-          .snapshots()
-          .map((snapshot) => snapshot.docs);
-    });
+    _sortSurveys();
   }
 
   void _clearFilter(String department) {
@@ -47,93 +37,88 @@ class _FirstForAdminState extends State<FirstForAdmin> {
     });
   }
 
-  
-  
+  void _sortSurveys() {
+    setState(() {});
+  }
 
-Future<void> _deleteAllInCollection(String collectionName) async {
-  if (collectionName == 'surveys') {
-    
-    final surveysCollection = FirebaseFirestore.instance.collection('surveys');
-    final snapshot = await surveysCollection.get();
-    for (var doc in snapshot.docs) {
-      
-      await FirebaseFirestore.instance.collection('backup').doc(doc.id).set({
-        ...doc.data(), 
-        'backupTimestamp': FieldValue.serverTimestamp(), 
-      });
+  Future<void> _deleteAllInCollection(String collectionName) async {
+    if (collectionName == 'surveys') {
+      final surveysCollection =
+          FirebaseFirestore.instance.collection('surveys');
+      final snapshot = await surveysCollection.get();
+      for (var doc in snapshot.docs) {
+        await FirebaseFirestore.instance.collection('backup').doc(doc.id).set({
+          ...doc.data(),
+          'backupTimestamp': FieldValue.serverTimestamp(),
+        });
 
-      
-      await doc.reference.delete();
+        await doc.reference.delete();
+      }
+    } else {
+      final collection = FirebaseFirestore.instance.collection(collectionName);
+      final snapshot = await collection.get();
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
     }
-  } else {
-    
-    final collection = FirebaseFirestore.instance.collection(collectionName);
-    final snapshot = await collection.get();
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
+  }
+
+  Future<void> _resetAllSurveys() async {
+    try {
+      await _deleteAllInCollection('surveys');
+
+      await FirebaseFirestore.instance.collection('notifications').get().then(
+          (snap) =>
+              Future.wait(snap.docs.map((doc) => doc.reference.delete())));
+      await FirebaseFirestore.instance
+          .collection('students_responses')
+          .get()
+          .then((snap) =>
+              Future.wait(snap.docs.map((doc) => doc.reference.delete())));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("All surveys and related data deleted")),
+      );
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to reset surveys: $e")),
+      );
     }
   }
-}
 
-
-Future<void> _resetAllSurveys() async {
-  try {
-    
-    await _deleteAllInCollection('surveys');
-
-    
-    await FirebaseFirestore.instance.collection('notifications').get().then((snap) => 
-      Future.wait(snap.docs.map((doc) => doc.reference.delete()))
-    );
-    await FirebaseFirestore.instance.collection('students_responses').get().then((snap) => 
-      Future.wait(snap.docs.map((doc) => doc.reference.delete()))
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("All surveys and related data deleted")),
-    );
-  } catch (e) {
-    print("Error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to reset surveys: $e")),
-    );
+  Future<void> _deleteAllStudents() async {
+    try {
+      await _deleteAllInCollection('students');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("All student data deleted")),
+      );
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete students: $e")),
+      );
+    }
   }
-}
-Future<void> _deleteAllStudents() async {
-  try {
-    await _deleteAllInCollection('students');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("All student data deleted")),
-    );
-  } catch (e) {
-    print("Error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to delete students: $e")),
-    );
+
+  Future<void> _resetEverything() async {
+    try {
+      await _deleteAllInCollection('surveys');
+
+      await _deleteAllInCollection('notifications');
+      await _deleteAllInCollection('students_responses');
+      await _deleteAllInCollection('students');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("All data reset except admins")),
+      );
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Reset failed: $e")),
+      );
+    }
   }
-}
-
-
-Future<void> _resetEverything() async {
-  try {
-    
-    await _deleteAllInCollection('surveys');
-
-    
-    await _deleteAllInCollection('notifications');
-    await _deleteAllInCollection('students_responses');
-    await _deleteAllInCollection('students'); 
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("All data reset except admins")),
-    );
-  } catch (e) {
-    print("Error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Reset failed: $e")),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -142,250 +127,480 @@ Future<void> _resetEverything() async {
     final bool isSuperAdmin = (args?['isSuperAdmin'] as bool?) ?? false;
     return Scaffold(
       appBar: AppBar(
-        title: Text(isSuperAdmin ? "Home for Super Admin" : "Home for Admin",
-            style: TextStyle(color: Colors.white)),
+        title: Text(isSuperAdmin ? "Home " : "Home ",
+            style: TextStyle(
+              color: Colors.white,
+            )),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.logout, color: Colors.red),
-          onPressed: () => logout(context),
+          onPressed: () async {
+            bool? confirmed = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(
+                  "Confirm Logout",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Text(
+                  "Are you sure you want to log out?",
+                  style: TextStyle(color: Colors.black),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      "Cancel",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      "Yes, Logout",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+
+            // If user confirmed, proceed with logout
+            if (confirmed == true) {
+              logout(context);
+            }
+          },
         ),
         centerTitle: true,
-         actions: isSuperAdmin 
-    ? [
-        PopupMenuButton<String>(
-          icon: Icon(Icons.settings,color: Colors.white),
-          onSelected: (value) async {
-  bool? confirmedFirst = false;
-  bool? confirmedSecond = false;
-  bool? confirmedThird = false;
-  switch (value) {
-    case 'reset_surveys':
-      
-      confirmedFirst = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("First Warning"),
-          content: Text("This will delete all surveys, notifications, and responses. Continue?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text("Yes"),
-            ),
-          ],
-        ),
-      );
-      if (confirmedFirst != null && confirmedFirst) {
-        
-        confirmedSecond = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Second Warning"),
-            content: Text("Are you sure? This action cannot be undone."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text("Cancel"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text("Yes"),
-              ),
-            ],
-          ),
-        );
-        if (confirmedSecond != null && confirmedSecond) {
-          
-          confirmedThird = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text("Final Warning"),
-              content: Text("LAST CHANCE: Proceed with deleting all surveys and related data?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text("Cancel"),
+        actions: isSuperAdmin
+            ? [
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.settings, color: Colors.white),
+                  onSelected: (value) async {
+                    bool? confirmedFirst = false;
+                    bool? confirmedSecond = false;
+                    bool? confirmedThird = false;
+                    switch (value) {
+                      case 'reset_surveys':
+                        confirmedFirst = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(
+                              "Warning",
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            content: Text(
+                              "This will delete all surveys, notifications, and responses. Continue?",
+                              style: TextStyle(color: Colors.black),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text(
+                                  "Cancel",
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text(
+                                  "Yes",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmedFirst != null && confirmedFirst) {
+                          confirmedSecond = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                "Warning again",
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              content: Text(
+                                "Are you sure? This action cannot be undone.",
+                                style: TextStyle(color: Colors.black),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(
+                                    "Cancel",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(
+                                    "Yes",
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmedSecond != null && confirmedSecond) {
+                            confirmedThird = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor:
+                                    Color.fromARGB(255, 253, 200, 0),
+                                title: Text(
+                                  "Final Warning",
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                content: Text(
+                                  "LAST CHANCE: Proceed with deleting all surveys and related data?",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: Text(
+                                      "Proceed",
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmedThird != null && confirmedThird) {
+                              await _resetAllSurveys();
+                            }
+                          }
+                        }
+                        break;
+                      case 'delete_students':
+                        confirmedFirst = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(
+                              "Warning",
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            content: Text(
+                              "This will delete all student data. Continue?",
+                              style: TextStyle(color: Colors.black),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text(
+                                  "Cancel",
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text(
+                                  "Yes",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmedFirst != null && confirmedFirst) {
+                          confirmedSecond = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                "Warning again",
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              content: Text(
+                                "Are you sure? This action cannot be undone.",
+                                style: TextStyle(color: Colors.black),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(
+                                    "Cancel",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(
+                                    "Yes",
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmedSecond != null && confirmedSecond) {
+                            confirmedThird = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor:
+                                    Color.fromARGB(255, 253, 200, 0),
+                                title: Text(
+                                  "Final Warning",
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                content: Text(
+                                  "LAST CHANCE: Proceed with deleting all student data?",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: Text(
+                                      "Proceed",
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmedThird != null && confirmedThird) {
+                              await _deleteAllStudents();
+                            }
+                          }
+                        }
+                        break;
+                      case 'reset_all':
+                        confirmedFirst = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(
+                              "Warning",
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            content: Text(
+                              "This will delete all data except admins. Continue?",
+                              style: TextStyle(color: Colors.black),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text(
+                                  "Cancel",
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text(
+                                  "Yes",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmedFirst != null && confirmedFirst) {
+                          confirmedSecond = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                "Warning again",
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              content: Text(
+                                "Are you sure? This action cannot be undone.",
+                                style: TextStyle(color: Colors.black),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(
+                                    "Cancel",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(
+                                    "Yes",
+                                    style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmedSecond != null && confirmedSecond) {
+                            confirmedThird = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor:
+                                    Color.fromARGB(255, 253, 200, 0),
+                                title: Text(
+                                  "Final Warning",
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                content: Text(
+                                  "LAST CHANCE: Proceed with deleting all data except admins?",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: Text(
+                                      "Proceed",
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmedThird != null && confirmedThird) {
+                              await _resetEverything();
+                            }
+                          }
+                        }
+                        break;
+                      case 'recyclebin':
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecycleBinPage(),
+                          ),
+                        );
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'reset_surveys',
+                      child: Row(
+                        children: [
+                          Icon(Icons.note_alt_outlined, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Delete All Surveys'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete_students',
+                      child: Row(
+                        children: [
+                          Icon(Icons.people_alt, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Delete All Students'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'reset_all',
+                      child: Row(
+                        children: [
+                          Icon(Icons.lock_reset, color: Colors.red),
+                          SizedBox(width: 10),
+                          Text('Reset the app'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'recyclebin',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, color: Colors.blueGrey),
+                          SizedBox(width: 10),
+                          Text('Recycle bin'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text("Proceed"),
-                ),
-              ],
-            ),
-          );
-          if (confirmedThird != null && confirmedThird) {
-            await _resetAllSurveys(); 
-          }
-        }
-      }
-      break;
-    case 'delete_students':
-      
-      confirmedFirst = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("First Warning"),
-          content: Text("This will delete all student data. Continue?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text("Yes"),
-            ),
-          ],
-        ),
-      );
-      if (confirmedFirst != null && confirmedFirst) {
-        
-        confirmedSecond = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Second Warning"),
-            content: Text("Are you sure? This action cannot be undone."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text("Cancel"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text("Yes"),
-              ),
-            ],
-          ),
-        );
-        if (confirmedSecond != null && confirmedSecond) {
-          
-          confirmedThird = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text("Final Warning"),
-              content: Text("LAST CHANCE: Proceed with deleting all student data?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text("Cancel"),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text("Proceed"),
-                ),
-              ],
-            ),
-          );
-          if (confirmedThird != null && confirmedThird) {
-            await _deleteAllStudents(); 
-          }
-        }
-      }
-      break;
-    case 'reset_all':
-      
-      confirmedFirst = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("First Warning"),
-          content: Text("This will delete all data except admins. Continue?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text("Yes"),
-            ),
-          ],
-        ),
-      );
-      if (confirmedFirst != null && confirmedFirst) {
-        
-        confirmedSecond = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Second Warning"),
-            content: Text("Are you sure? This action cannot be undone."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text("Cancel"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text("Yes"),
-              ),
-            ],
-          ),
-        );
-        if (confirmedSecond != null && confirmedSecond) {
-          
-          confirmedThird = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text("Final Warning"),
-              content: Text("LAST CHANCE: Proceed with deleting all data except admins?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text("Cancel"),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text("Proceed"),
-                ),
-              ],
-            ),
-          );
-          if (confirmedThird != null && confirmedThird) {
-            await _resetEverything(); 
-          }
-        }
-      }
-      break;
-  }
-},
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'reset_surveys',
-              child: Text("Reset All Surveys"),
-            ),
-            PopupMenuItem(
-              value: 'delete_students',
-              child: Text("Delete All Students"),
-            ),
-            PopupMenuItem(
-              value: 'reset_all',
-              child: Text("Reset Everything"),
-            ),
-          ],
-        ),
-         IconButton(
-      icon: Icon(Icons.delete_outline, size: 30 ,color: Colors.red), 
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RecycleBinPage(), 
-          ),
-        );
-      },
-    ),
-      ]
-    : [], 
+              ]
+            : [],
       ),
       backgroundColor: Colors.white,
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
-          if (isSuperAdmin)
-            
-          SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
@@ -455,28 +670,49 @@ Future<void> _resetEverything() async {
                       }).toList(),
                     ),
                   ),
-                SizedBox(height: 20),
-                Text(
-                  'Create a New Survey',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
+                SizedBox(height: 10),
+                FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('admins')
+                      .doc(args?['adminId'])
+                      .get(),
+                  builder: (context, snapshot) {
+                    String adminName = "Admin";
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final data =
+                          snapshot.data!.data() as Map<String, dynamic>?;
+                      adminName = data?['name'] ?? "Admin";
+                    }
+                    return Text(
+                      'Welcome Dr. $adminName',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(255, 28, 51, 95),
+                      ),
+                    );
+                  },
                 ),
-                Text(
-                  'Follow the instructions to create your survey.',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
+                SizedBox(height: 10),
+                Container(
+                  width: 350,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(6),
+                    image: const DecorationImage(
+                      image: AssetImage("assets/adminmain.png"),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
                 SizedBox(height: 20),
-                Row(
+                /*Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+                        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -487,18 +723,18 @@ Future<void> _resetEverything() async {
                       },
                       child: Row(
                         children: [
-                          Icon(Icons.add, color: Colors.black),
+                          Icon(Icons.add, color: Colors.white),
                           Text(' Create Survey',
-                              style: TextStyle(color: Colors.black)),
+                              style: TextStyle(color: Colors.white)),
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+                    backgroundColor: const Color.fromARGB(255, 28, 51, 95),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -508,115 +744,188 @@ Future<void> _resetEverything() async {
                   },
                   child: Row(
                     children: [
-                      Icon(Icons.remove_red_eye, color: Colors.black),
+                      Icon(Icons.remove_red_eye, color: Colors.white),
                       Text(' View groups',
-                          style: TextStyle(color: Colors.black)),
+                          style: TextStyle(color: Colors.white)),
                     ],
                   ),
-                ),
-                SizedBox(height: 20),
+                ),*/
+
                 Text(
-                  'Surveys',
+                  'Your available surveys :',
                   style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: const Color.fromARGB(255, 28, 51, 95),
+                  ),
                 ),
                 SizedBox(height: 10),
                 Container(
-                  height: 330,
+                  height: 340,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.black),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: SingleChildScrollView(
-                    child: StreamBuilder<List<DocumentSnapshot>>(
-                      stream: _surveysStream,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return Center(
-                              child: Text('Error: ${snapshot.error}'));
-                        }
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0, vertical: 2.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 28, 51, 95),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          height: 40,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              DropdownButton<String>(
+                                value: _selectedSortOption,
+                                icon: const Icon(
+                                  Icons.sort,
+                                  size: 24,
+                                  color: Colors.white,
+                                ),
+                                underline: const SizedBox(),
+                                dropdownColor:
+                                    const Color.fromARGB(255, 28, 51, 95),
+                                style: const TextStyle(color: Colors.white),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'newest',
+                                    child: Text('Newest First'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'oldest',
+                                    child: Text('Oldest First'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'a-z',
+                                    child: Text('A-Z'),
+                                  ),
+                                ],
+                                onChanged: (String? value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _selectedSortOption = value;
+                                      _sortSurveys();
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: StreamBuilder<List<DocumentSnapshot>>(
+                            stream: _surveysStream,
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                return Center(
+                                    child: Text('Error: ${snapshot.error}'));
+                              }
 
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        }
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Center(
+                                    child: CircularProgressIndicator());
+                              }
 
-                        if (snapshot.data == null || snapshot.data!.isEmpty) {
-                          return Center(child: Text("No surveys available."));
-                        }
+                              if (snapshot.data == null ||
+                                  snapshot.data!.isEmpty) {
+                                return Center(
+                                    child: Text(
+                                  "No surveys available.",
+                                  style: TextStyle(
+                                    color:
+                                        const Color.fromARGB(255, 28, 51, 95),
+                                  ),
+                                ));
+                              }
 
-                        String currentUserId =
-                            FirebaseAuth.instance.currentUser?.uid ?? "";
+                              String currentUserId =
+                                  FirebaseAuth.instance.currentUser?.uid ?? "";
 
-                        final filteredSurveys = snapshot.data!.where((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final name =
-                              data['name']?.toString().toLowerCase() ?? '';
-                          final departments =
-                              (data['departments'] as List<dynamic>?)
-                                      ?.map((d) => d.toString().toLowerCase())
-                                      .toSet() ??
-                                  {};
-                          final createdBy = data['madyby']?.toString() ?? '';
-                          if (!isSuperAdmin) {
-                            
-                            return createdBy == currentUserId &&
-                                name.contains(_searchQuery) &&
-                                (_selectedDepartments.isEmpty ||
-                                    _selectedDepartments.every((dep) =>
-                                        departments
-                                            .contains(dep.toLowerCase())));
-                          } else {
-                            
-                            return name.contains(_searchQuery) &&
-                                (_selectedDepartments.isEmpty ||
-                                    _selectedDepartments.every((dep) =>
-                                        departments
-                                            .contains(dep.toLowerCase())));
-                          }
-                        }).toList();
+                              final filteredSurveys =
+                                  snapshot.data!.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final name =
+                                    data['name']?.toString().toLowerCase() ??
+                                        '';
+                                final departments = (data['departments']
+                                            as List<dynamic>?)
+                                        ?.map((d) => d.toString().toLowerCase())
+                                        .toSet() ??
+                                    {};
+                                final createdBy =
+                                    data['madyby']?.toString() ?? '';
+                                if (!isSuperAdmin) {
+                                  return createdBy == currentUserId &&
+                                      name.contains(_searchQuery) &&
+                                      (_selectedDepartments.isEmpty ||
+                                          _selectedDepartments.every((dep) =>
+                                              departments.contains(
+                                                  dep.toLowerCase())));
+                                } else {
+                                  return name.contains(_searchQuery) &&
+                                      (_selectedDepartments.isEmpty ||
+                                          _selectedDepartments.every((dep) =>
+                                              departments.contains(
+                                                  dep.toLowerCase())));
+                                }
+                              }).toList();
 
-                        filteredSurveys.sort((a, b) {
-                          final aData = a.data() as Map<String, dynamic>;
-                          final bData = b.data() as Map<String, dynamic>;
-                          final aTimestamp = aData['timestamp'] as Timestamp?;
-                          final bTimestamp = bData['timestamp'] as Timestamp?;
-                          if (aTimestamp == null || bTimestamp == null) {
-                            return 0;
-                          }
-                          return bTimestamp.compareTo(aTimestamp);
-                        });
+                              filteredSurveys.sort((a, b) {
+                                final aData = a.data() as Map<String, dynamic>;
+                                final bData = b.data() as Map<String, dynamic>;
+                                final aTimestamp =
+                                    aData['timestamp'] as Timestamp?;
+                                final bTimestamp =
+                                    bData['timestamp'] as Timestamp?;
+                                if (aTimestamp == null || bTimestamp == null) {
+                                  return 0;
+                                }
+                                return bTimestamp.compareTo(aTimestamp);
+                              });
 
-                        return Column(
-                          children: filteredSurveys.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-                            final questions = data['questions'] ?? [];
-                            final departments =
-                                (data['departments'] as List<dynamic>?)
-                                        ?.map((d) => d.toString())
-                                        .join(', ') ??
-                                    'Unknown Departments';
-                            final timestamp = data['timestamp'] as Timestamp?;
-                            final formattedTime = timestamp != null
-                                ? '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}'
-                                : 'N/A';
+                              return Column(
+                                children: filteredSurveys.map((doc) {
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
+                                  final questions = data['questions'] ?? [];
+                                  final departments =
+                                      (data['departments'] as List<dynamic>?)
+                                              ?.map((d) => d.toString())
+                                              .join(', ') ??
+                                          'Unknown Departments';
+                                  final timestamp =
+                                      data['timestamp'] as Timestamp?;
+                                  final formattedTime = timestamp != null
+                                      ? '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}'
+                                      : 'N/A';
 
-                            return SurveyCard(
-                              title: data['name'] ?? 'Unnamed Survey',
-                              subtitle: '${questions.length} questions',
-                              departments: departments,
-                              image: "assets/minipic3.jpg",
-                              createdAt: formattedTime,
-                              survey: doc,
-                            );
-                          }).toList(),
-                        );
-                      },
-                    ),
+                                  return SurveyCard(
+                                    title: data['name'] ?? 'Unnamed Survey',
+                                    subtitle:
+                                        'Number of questions : ${questions.length} questions',
+                                    departments: departments,
+                                    createdAt: formattedTime,
+                                    survey: doc,
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                SizedBox(height: 20),
               ],
             ),
           ),
@@ -631,7 +940,6 @@ class SurveyCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String departments;
-  final String image;
   final String createdAt;
   final DocumentSnapshot survey;
 
@@ -640,7 +948,6 @@ class SurveyCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.departments,
-    required this.image,
     required this.createdAt,
     required this.survey,
   });
@@ -651,16 +958,24 @@ class SurveyCard extends StatelessWidget {
         .get();
     return query.size;
   }
+
   @override
-   Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
       child: Container(
-        height: 140,
+        height: 130,
         decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black, blurRadius: 2)],
-          borderRadius: BorderRadius.circular(4),
+          color: const Color.fromARGB(255, 205, 205, 205),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 2,
+              offset: Offset(0, 2),
+            )
+          ],
+          borderRadius: BorderRadius.circular(12.0),
         ),
         child: Row(
           children: [
@@ -677,19 +992,22 @@ class SurveyCard extends StatelessWidget {
                           child: Text(
                             title,
                             style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: const Color.fromARGB(255, 28, 51, 95),
+                            ),
                           ),
                         ),
                         FutureBuilder<int>(
                           future: _getResponseCount(),
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
                               return const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               );
                             }
                             if (snapshot.hasError) return const Text('?');
@@ -697,58 +1015,55 @@ class SurveyCard extends StatelessWidget {
                               '(${snapshot.data ?? 0} responses)',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: const Color.fromARGB(255, 43, 77, 140),
                               ),
                             );
                           },
                         ),
                       ],
                     ),
-                    
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 12, color: Colors.black),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: const Color.fromARGB(255, 70, 94, 105)),
                     ),
                     Text(
                       'Departments: $departments',
-                      style: TextStyle(fontSize: 12, color: Colors.black),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: const Color.fromARGB(255, 70, 94, 105)),
                     ),
                     Text(
-                      'Created: $createdAt',
-                      style: TextStyle(fontSize: 12, color: Colors.black),
+                      'Created at: $createdAt',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: const Color.fromARGB(255, 70, 94, 105)),
                     ),
-                    SizedBox(height: 10),
                     Flexible(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 253, 200, 0)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  SurveyDetailsScreen(survey: survey),
-                            ),
-                          );
-                        },
-                        child: Text('View Details',
-                            style: TextStyle(color: Colors.black)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(255, 253, 200, 0)),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      SurveyDetailsScreen(survey: survey),
+                                ),
+                              );
+                            },
+                            child: Text('View Details',
+                                style: TextStyle(color: Colors.black)),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
-            Container(
-              width: 100,
-              height: 80,
-              margin: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                image: DecorationImage(
-                  image: AssetImage(image),
-                  fit: BoxFit.cover,
                 ),
               ),
             ),
@@ -758,4 +1073,3 @@ class SurveyCard extends StatelessWidget {
     );
   }
 }
-

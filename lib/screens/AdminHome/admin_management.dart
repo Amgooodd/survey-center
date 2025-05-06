@@ -91,16 +91,18 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
           color: Colors.white,
         ),
         label: const Text(
-          'Add Admin',
+          'Add admin',
           style: TextStyle(color: Colors.white),
         ),
         onPressed: () => showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text(
-              'Add New Admin',
+              'Add new admin',
               style: TextStyle(
+                fontSize: 22,
                 color: Color.fromARGB(255, 28, 51, 95),
+                fontWeight: FontWeight.bold,
               ),
             ),
             content: SingleChildScrollView(
@@ -176,7 +178,8 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(255, 253, 200, 0)),
+                  backgroundColor: Color.fromARGB(255, 28, 51, 95),
+                ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     Navigator.pop(context);
@@ -185,7 +188,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                 },
                 child: const Text(
                   'Create Admin',
-                  style: TextStyle(color: Colors.black),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -259,7 +262,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                                 style: const TextStyle(color: Colors.black),
                               ),
                               backgroundColor: data['isSuperAdmin'] ?? false
-                                  ? Colors.deepPurple
+                                  ? Colors.blue
                                   : Color.fromARGB(255, 253, 200, 0),
                             ),
                           ],

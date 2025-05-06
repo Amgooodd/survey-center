@@ -12,64 +12,60 @@ class SurveyDetailsScreen extends StatefulWidget {
 }
 
 class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
-Future<void> _deleteSurvey() async {
-  try {
-    
-    final surveyDoc = await FirebaseFirestore.instance
-        .collection('surveys')
-        .doc(widget.survey.id)
-        .get();
+  Future<void> _deleteSurvey() async {
+    try {
+      final surveyDoc = await FirebaseFirestore.instance
+          .collection('surveys')
+          .doc(widget.survey.id)
+          .get();
 
-    if (surveyDoc.exists) {
-      
-      await FirebaseFirestore.instance.collection('backup')
-          .doc(widget.survey.id) 
-          .set({
-        ...?surveyDoc.data(), 
-        'backupTimestamp': FieldValue.serverTimestamp(), 
-      });
+      if (surveyDoc.exists) {
+        await FirebaseFirestore.instance
+            .collection('backup')
+            .doc(widget.survey.id)
+            .set({
+          ...?surveyDoc.data(),
+          'backupTimestamp': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await FirebaseFirestore.instance
+          .collection('surveys')
+          .doc(widget.survey.id)
+          .delete();
+
+      final notificationQuery = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('surveyId', isEqualTo: widget.survey.id)
+          .get();
+      for (var doc in notificationQuery.docs) {
+        await doc.reference.delete();
+      }
+
+      final responsesQuery = await FirebaseFirestore.instance
+          .collection('students_responses')
+          .where('surveyId', isEqualTo: widget.survey.id)
+          .get();
+      for (var doc in responsesQuery.docs) {
+        await doc.reference.delete();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Survey deleted successfully")),
+      );
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/firsrforadminn',
+        (route) => false,
+      );
+    } catch (e) {
+      print("Error deleting survey: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to delete survey: $e")),
+      );
     }
-
-    
-    await FirebaseFirestore.instance
-        .collection('surveys')
-        .doc(widget.survey.id)
-        .delete();
-
-    
-    final notificationQuery = await FirebaseFirestore.instance
-        .collection('notifications')
-        .where('surveyId', isEqualTo: widget.survey.id)
-        .get();
-    for (var doc in notificationQuery.docs) {
-      await doc.reference.delete();
-    }
-
-    
-    final responsesQuery = await FirebaseFirestore.instance
-        .collection('students_responses')
-        .where('surveyId', isEqualTo: widget.survey.id)
-        .get();
-    for (var doc in responsesQuery.docs) {
-      await doc.reference.delete();
-    }
-
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Survey deleted successfully")),
-    );
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/firsrforadminn',
-      (route) => false,
-    );
-  } catch (e) {
-    print("Error deleting survey: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to delete survey: $e")),
-    );
   }
-}
+
   Future<void> _endSurvey() async {
     await FirebaseFirestore.instance
         .collection('surveys')
@@ -78,7 +74,8 @@ Future<void> _deleteSurvey() async {
       'deadline': FieldValue.serverTimestamp(),
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Survey has been ended and marked as expired.")),
+      const SnackBar(
+          content: Text("Survey has been ended and marked as expired.")),
     );
   }
 
@@ -108,7 +105,10 @@ Future<void> _deleteSurvey() async {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(dialogContext);
+                Navigator.popUntil(
+                  context,
+                  (route) => route.settings.name == '/firsrforadminn',
+                );
                 await _deleteSurvey();
               },
               child: const Text('Yes'),
@@ -140,7 +140,8 @@ Future<void> _deleteSurvey() async {
                 children: [
                   TextField(
                     controller: questionController,
-                    decoration: const InputDecoration(labelText: 'Question Text'),
+                    decoration:
+                        const InputDecoration(labelText: 'Question Text'),
                   ),
                   const SizedBox(height: 10),
                   if (question['type'] == 'multiple_choice') ...[
@@ -172,7 +173,8 @@ Future<void> _deleteSurvey() async {
                           icon: const Icon(Icons.add),
                           onPressed: () {
                             setStateDialog(() {
-                              optionControllers.add(TextEditingController(text: ''));
+                              optionControllers
+                                  .add(TextEditingController(text: ''));
                             });
                           },
                         ),
@@ -252,7 +254,8 @@ Future<void> _deleteSurvey() async {
                 children: [
                   TextField(
                     controller: questionController,
-                    decoration: const InputDecoration(labelText: 'Question Text'),
+                    decoration:
+                        const InputDecoration(labelText: 'Question Text'),
                   ),
                   if (type == 'multiple_choice') ...[
                     const SizedBox(height: 10),
@@ -284,7 +287,8 @@ Future<void> _deleteSurvey() async {
                           icon: const Icon(Icons.add),
                           onPressed: () {
                             setStateDialog(() {
-                              optionControllers.add(TextEditingController(text: ''));
+                              optionControllers
+                                  .add(TextEditingController(text: ''));
                             });
                           },
                         ),
@@ -373,7 +377,6 @@ Future<void> _deleteSurvey() async {
           .doc(widget.survey.id)
           .snapshots(),
       builder: (context, snapshot) {
-        
         if (!snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(title: const Text('Survey Details')),
@@ -381,7 +384,6 @@ Future<void> _deleteSurvey() async {
           );
         }
 
-        
         final document = snapshot.data!;
         if (!document.exists || document.data() == null) {
           return Scaffold(
@@ -390,10 +392,10 @@ Future<void> _deleteSurvey() async {
           );
         }
 
-        
         final data = document.data()! as Map<String, dynamic>;
         final questions = data['questions'] ?? [];
-        final departments = (data['departments'] as List?)?.join(', ') ?? 'Unknown Departments';
+        final departments =
+            (data['departments'] as List?)?.join(', ') ?? 'Unknown Departments';
         final timestamp = data['timestamp'] as Timestamp?;
         final formattedTime = timestamp != null
             ? '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}'
@@ -406,7 +408,12 @@ Future<void> _deleteSurvey() async {
             backgroundColor: const Color.fromARGB(255, 28, 51, 95),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pushNamed(context, '/firsrforadminn'),
+              onPressed: () {
+                Navigator.popUntil(
+                  context,
+                  (route) => route.settings.name == '/firsrforadminn',
+                );
+              },
             ),
             centerTitle: true,
             actions: [
@@ -415,7 +422,8 @@ Future<void> _deleteSurvey() async {
                 onSelected: (value) async {
                   switch (value) {
                     case 'download':
-                      await SurveyExporter().exportSurveyResponses(widget.survey.id);
+                      await SurveyExporter()
+                          .exportSurveyResponses(widget.survey.id);
                       break;
                     case 'end':
                       await _endSurvey();
@@ -487,11 +495,14 @@ Future<void> _deleteSurvey() async {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Departments: $departments', style: const TextStyle(fontSize: 15)),
-                Text('Created At: $formattedTime', style: const TextStyle(fontSize: 15)),
+                Text('Departments: $departments',
+                    style: const TextStyle(fontSize: 15)),
+                Text('Created At: $formattedTime',
+                    style: const TextStyle(fontSize: 15)),
                 const SizedBox(height: 20),
                 const Text('Questions:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
                 Expanded(
                   child: ListView.builder(
@@ -502,17 +513,20 @@ Future<void> _deleteSurvey() async {
                         child: ListTile(
                           title: Text(question['title'] ?? 'No Question Text'),
                           subtitle: question['type'] == 'multiple_choice'
-                              ? Text('Options: ${question['options'].join(', ')}')
+                              ? Text(
+                                  'Options: ${question['options'].join(', ')}')
                               : null,
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.edit),
-                                onPressed: () => _showEditQuestionDialog(question),
+                                onPressed: () =>
+                                    _showEditQuestionDialog(question),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _deleteQuestion(question),
                               ),
                             ],

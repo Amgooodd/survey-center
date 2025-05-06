@@ -15,9 +15,9 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
     final backupDoc = await _firestore.collection('backup').doc(surveyId).get();
     if (backupDoc.exists) {
       await _firestore.collection('surveys').doc(surveyId).set(
-        backupDoc.data()!,
-        SetOptions(merge: true),
-      );
+            backupDoc.data()!,
+            SetOptions(merge: true),
+          );
       await _firestore.collection('backup').doc(surveyId).delete();
       setState(() {
         _selectedSurveys.remove(surveyId);
@@ -35,71 +35,73 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
   Future<void> _handleBulkAction(String action) async {
     if (_selectedSurveys.isEmpty) return;
 
-     final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text("Confirm ${action == 'restore' ? 'Restore' : 'Delete'}"),
-      content: Text(
-        action == 'restore'
-            ? 'Are you sure you want to restore ${_selectedSurveys.length} surveys?'
-            : 'Are you sure you want to permanently delete ${_selectedSurveys.length} surveys?',
-      ),
-      actions: [
-        TextButton(
-          child: Text("Cancel"),
-          onPressed: () => Navigator.pop(context, false),
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirm ${action == 'restore' ? 'Restore' : 'Delete'}"),
+        content: Text(
+          action == 'restore'
+              ? 'Are you sure you want to restore ${_selectedSurveys.length} surveys?'
+              : 'Are you sure you want to permanently delete ${_selectedSurveys.length} surveys?',
         ),
-        TextButton(
-          child: Text(
-            "Confirm",
-            style: TextStyle(
-              color: action == 'delete' ? Colors.red : Colors.blue,
-            ),
+        actions: [
+          TextButton(
+            child: Text("Cancel"),
+            onPressed: () => Navigator.pop(context, false),
           ),
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    ),
-  );
-
-   if (confirmed != true) return;
-
-  
-  final selectedCopy = Set<String>.from(_selectedSurveys);
-  int successCount = 0;
-  String actionText = action == 'restore' ? 'restored' : 'permanently deleted';
-
-  try {
-    for (var id in selectedCopy) {
-      try {
-        if (action == 'restore') {
-          await _restoreSurvey(id);
-        } else {
-          await _deletePermanently(id);
-        }
-        successCount++;
-      } catch (e) {
-        print('Failed to $actionText survey $id: $e');
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Successfully $actionText $successCount/${selectedCopy.length} surveys'),
-        duration: Duration(seconds: 3),
+          TextButton(
+            child: Text(
+              "Confirm",
+              style: TextStyle(
+                color: action == 'delete' ? Colors.red : Colors.blue,
+              ),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
       ),
     );
-  } finally {
-    setState(() => _selectedSurveys.clear());
+
+    if (confirmed != true) return;
+
+    final selectedCopy = Set<String>.from(_selectedSurveys);
+    int successCount = 0;
+    String actionText =
+        action == 'restore' ? 'restored' : 'permanently deleted';
+
+    try {
+      for (var id in selectedCopy) {
+        try {
+          if (action == 'restore') {
+            await _restoreSurvey(id);
+          } else {
+            await _deletePermanently(id);
+          }
+          successCount++;
+        } catch (e) {
+          print('Failed to $actionText survey $id: $e');
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Successfully $actionText $successCount/${selectedCopy.length} surveys'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      setState(() => _selectedSurveys.clear());
+    }
   }
-}
 
   Future<void> _handleBulkAllAction(String action) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Confirm Bulk Action"),
-        content: Text("This will ${action.replaceAll('_', ' ')} ALL surveys in recycle bin"),
+        content: Text(
+            "This will ${action.replaceAll('_', ' ')} ALL surveys in recycle bin"),
         actions: [
           TextButton(
             child: Text("Cancel"),
@@ -118,7 +120,8 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
     final snapshot = await _firestore.collection('backup').get();
     int total = snapshot.docs.length;
     int successCount = 0;
-    String actionText = action.contains('restore') ? 'restored' : 'permanently deleted';
+    String actionText =
+        action.contains('restore') ? 'restored' : 'permanently deleted';
 
     for (var doc in snapshot.docs) {
       try {
@@ -145,15 +148,31 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Recycle Bin"),
+        title: Text(
+          "Recycle Bin",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.popUntil(
+              context,
+              (route) => route.settings.name == '/firsrforadminn',
+            );
+          },
+        ),
+        centerTitle: true,
         actions: [
           if (_selectedSurveys.isNotEmpty)
             Row(
               children: [
-                Text("${_selectedSurveys.length} selected", 
-                    style: TextStyle(fontSize: 16, color: const Color.fromARGB(255, 0, 0, 0))),
+                Text("${_selectedSurveys.length} selected",
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: const Color.fromARGB(255, 0, 0, 0))),
                 IconButton(
-                  icon: Icon(Icons.restore, size: 28, color:  Colors.blue),
+                  icon: Icon(Icons.restore, size: 28, color: Colors.blue),
                   onPressed: () => _handleBulkAction('restore'),
                   tooltip: 'Restore selected',
                 ),
@@ -166,7 +185,7 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
             )
           else
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: const Color.fromARGB(255, 0, 0, 0)),
+              icon: Icon(Icons.more_vert, color: Colors.white),
               onSelected: _handleBulkAllAction,
               itemBuilder: (context) => [
                 PopupMenuItem(
@@ -180,7 +199,8 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
                   value: 'delete_all',
                   child: ListTile(
                     leading: Icon(Icons.delete_forever, color: Colors.red),
-                    title: Text('Delete All', style: TextStyle(color: Colors.red)),
+                    title:
+                        Text('Delete All', style: TextStyle(color: Colors.red)),
                   ),
                 ),
               ],
@@ -195,7 +215,7 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
-              child: Text('Recycle Bin is empty', 
+              child: Text('Recycle Bin is empty',
                   style: TextStyle(fontSize: 18, color: Colors.grey)),
             );
           }
@@ -206,7 +226,8 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
               final doc = snapshot.data!.docs[index];
               final data = doc.data() as Map<String, dynamic>;
               final date = (data['backupTimestamp'] as Timestamp).toDate();
-              final formattedDate = DateFormat('MMM dd, yyyy - HH:mm').format(date);
+              final formattedDate =
+                  DateFormat('MMM dd, yyyy - HH:mm').format(date);
 
               return Card(
                 margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -217,6 +238,7 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
                 child: ExpansionTile(
                   key: ValueKey(doc.id),
                   leading: Checkbox(
+                    activeColor: Color.fromARGB(255, 28, 51, 95),
                     value: _selectedSurveys.contains(doc.id),
                     onChanged: (value) => setState(() {
                       if (value!) {
@@ -237,7 +259,8 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
                     'Deleted: $formattedDate',
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
-                  childrenPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  childrenPadding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   expandedCrossAxisAlignment: CrossAxisAlignment.start,
                   tilePadding: EdgeInsets.symmetric(horizontal: 16),
                   children: [
@@ -254,58 +277,62 @@ class _RecycleBinPageState extends State<RecycleBinPage> {
                       ),
                     ),
                     ...(data['questions'] as List<dynamic>).map((q) => Padding(
-                      padding: EdgeInsets.only(bottom: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('• ', style: TextStyle(fontSize: 16)),
-                              Expanded(
-                                child: Text(
-                                  q['title'] ?? 'No question title',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (q['type'] == 'multiple_choice' && q['options'] != null)
-                            Padding(
-                              padding: EdgeInsets.only(left: 16, top: 4),
-                              child: Column(
-                                children: (q['options'] as List<dynamic>).map((opt) => 
-                                  Padding(
-                                    padding: EdgeInsets.only(bottom: 4),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('◦ ', 
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[600],
-                                            )),
-                                        Expanded(
-                                          child: Text(
-                                            opt.toString(),
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('• ', style: TextStyle(fontSize: 16)),
+                                  Expanded(
+                                    child: Text(
+                                      q['title'] ?? 'No question title',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
-                                ).toList(),
+                                ],
                               ),
-                            ),
-                        ],
-                      ),
-                    )),
+                              if (q['type'] == 'multiple_choice' &&
+                                  q['options'] != null)
+                                Padding(
+                                  padding: EdgeInsets.only(left: 16, top: 4),
+                                  child: Column(
+                                    children: (q['options'] as List<dynamic>)
+                                        .map(
+                                          (opt) => Padding(
+                                            padding: EdgeInsets.only(bottom: 4),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text('◦ ',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.grey[600],
+                                                    )),
+                                                Expanded(
+                                                  child: Text(
+                                                    opt.toString(),
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: Colors.grey[700],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )),
                   ],
                 ),
               );
