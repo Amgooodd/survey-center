@@ -171,7 +171,6 @@ class _FirstForAdminState extends State<FirstForAdmin> {
               ),
             );
 
-            
             if (confirmed == true) {
               logout(context);
             }
@@ -707,8 +706,6 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                   ),
                 ),
                 SizedBox(height: 20),
-               
-
                 Text(
                   'Your available surveys :',
                   style: TextStyle(
@@ -838,28 +835,40 @@ class _FirstForAdminState extends State<FirstForAdmin> {
                               }).toList();
 
                               filteredSurveys.sort((a, b) {
-  final aData = a.data() as Map<String, dynamic>;
-  final bData = b.data() as Map<String, dynamic>;
+                                final aData = a.data() as Map<String, dynamic>;
+                                final bData = b.data() as Map<String, dynamic>;
 
-  switch (_selectedSortOption) {
-    case 'newest':
-      final aTimestamp = aData['timestamp'] as Timestamp?;
-      final bTimestamp = bData['timestamp'] as Timestamp?;
-      if (aTimestamp == null || bTimestamp == null) return 0;
-      return bTimestamp.compareTo(aTimestamp);
-    case 'oldest':
-      final aTimestamp = aData['timestamp'] as Timestamp?;
-      final bTimestamp = bData['timestamp'] as Timestamp?;
-      if (aTimestamp == null || bTimestamp == null) return 0;
-      return aTimestamp.compareTo(bTimestamp);
-    case 'a-z':
-      final aName = aData['name']?.toString().toLowerCase() ?? '';
-      final bName = bData['name']?.toString().toLowerCase() ?? '';
-      return aName.compareTo(bName);
-    default:
-      return 0;
-  }
-});
+                                switch (_selectedSortOption) {
+                                  case 'newest':
+                                    final aTimestamp =
+                                        aData['timestamp'] as Timestamp?;
+                                    final bTimestamp =
+                                        bData['timestamp'] as Timestamp?;
+                                    if (aTimestamp == null ||
+                                        bTimestamp == null) return 0;
+                                    return bTimestamp.compareTo(aTimestamp);
+                                  case 'oldest':
+                                    final aTimestamp =
+                                        aData['timestamp'] as Timestamp?;
+                                    final bTimestamp =
+                                        bData['timestamp'] as Timestamp?;
+                                    if (aTimestamp == null ||
+                                        bTimestamp == null) return 0;
+                                    return aTimestamp.compareTo(bTimestamp);
+                                  case 'a-z':
+                                    final aName = aData['name']
+                                            ?.toString()
+                                            .toLowerCase() ??
+                                        '';
+                                    final bName = bData['name']
+                                            ?.toString()
+                                            .toLowerCase() ??
+                                        '';
+                                    return aName.compareTo(bName);
+                                  default:
+                                    return 0;
+                                }
+                              });
                               return Column(
                                 children: filteredSurveys.map((doc) {
                                   final data =
@@ -934,11 +943,11 @@ class SurveyCard extends StatelessWidget {
       child: Container(
         height: 130,
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 205, 205, 205),
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 5,
               spreadRadius: 2,
               offset: Offset(0, 2),
             )

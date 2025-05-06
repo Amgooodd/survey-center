@@ -80,15 +80,25 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
     });
   }
 
-  Color getRandomColor() {
-    final random = Random();
-    return Color.fromARGB(
-        255, random.nextInt(200), random.nextInt(200), random.nextInt(200));
-  }
-
   Widget buildChartsForQuestion(String question, Map<String, int> answers) {
     final total = answers.values.fold(0, (a, b) => a + b);
-    final colors = answers.entries.map((_) => getRandomColor()).toList();
+    final List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.indigo,
+      Colors.cyan,
+      Colors.brown,
+      Colors.lime,
+      Colors.deepOrange,
+      Colors.lightBlue,
+      Colors.lightGreen,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -293,7 +303,23 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
   Widget buildChartsAndTableForQuestion(
       String question, Map<String, int> answers) {
     final total = answers.values.fold(0, (a, b) => a + b);
-    final colors = answers.entries.map((_) => getRandomColor()).toList();
+    final List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.indigo,
+      Colors.cyan,
+      Colors.brown,
+      Colors.lime,
+      Colors.deepOrange,
+      Colors.lightBlue,
+      Colors.lightGreen,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

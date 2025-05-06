@@ -527,89 +527,106 @@ class _StudentFormState extends State<StudentForm> {
                                     return const SizedBox.shrink();
                                   }
                                   return Card(
-                                    shadowColor: Colors.black.withOpacity(0.3),
                                     margin: const EdgeInsets.all(10),
-                                    color: const Color.fromARGB(
-                                        255, 205, 205, 205),
-                                    elevation: 4,
+                                    color: Colors.white,
+                                    elevation: 0,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8.0),
                                     ),
-                                    child: ListTile(
-                                      title: Text(
-                                        survey['name'] ?? 'Untitled Survey',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color.fromARGB(
-                                              255, 28, 51, 95),
-                                        ),
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (survey['departments'] != null)
-                                            Text(
-                                              "Department(s): ${survey['departments'].join(', ')}",
-                                              style: TextStyle(
-                                                color: const Color.fromARGB(
-                                                    255, 70, 94, 105),
-                                              ),
-                                            ),
-                                          if (deadline != null)
-                                            Text(
-                                              "Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(deadline)}",
-                                            ),
-                                          if (isExpired)
-                                            const Text(
-                                              "This survey has expired.",
-                                              style:
-                                                  TextStyle(color: Colors.red),
-                                            ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.4),
+                                            blurRadius: 5,
+                                            spreadRadius: 2,
+                                            offset: Offset(0, 2),
+                                          )
                                         ],
                                       ),
-                                      trailing: isExpired
-                                          ? null
-                                          : ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    const Color.fromARGB(
-                                                        255, 253, 200, 0),
-                                                foregroundColor: Colors.black,
+                                      child: ListTile(
+                                        title: Text(
+                                          survey['name'] ?? 'Untitled Survey',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color.fromARGB(
+                                                255, 28, 51, 95),
+                                          ),
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (survey['departments'] != null)
+                                              Text(
+                                                "Department(s): ${survey['departments'].join(', ')}",
+                                                style: TextStyle(
+                                                  color: const Color.fromARGB(
+                                                      255, 70, 94, 105),
+                                                ),
                                               ),
-                                              onPressed: () async {
-                                                final surveyId = survey['id'];
-                                                await FirebaseFirestore.instance
-                                                    .collection('notifications')
-                                                    .where('studentId',
-                                                        isEqualTo:
-                                                            widget.studentId)
-                                                    .where('surveyId',
-                                                        isEqualTo: surveyId)
-                                                    .get()
-                                                    .then((snapshot) {
-                                                  for (var doc
-                                                      in snapshot.docs) {
-                                                    doc.reference.delete();
-                                                  }
-                                                });
+                                            if (deadline != null)
+                                              Text(
+                                                "Deadline: ${DateFormat('yyyy-MM-dd HH:mm').format(deadline)}",
+                                              ),
+                                            if (isExpired)
+                                              const Text(
+                                                "This survey has expired.",
+                                                style: TextStyle(
+                                                    color: Colors.red),
+                                              ),
+                                          ],
+                                        ),
+                                        trailing: isExpired
+                                            ? null
+                                            : ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      const Color.fromARGB(
+                                                          255, 253, 200, 0),
+                                                  foregroundColor: Colors.black,
+                                                ),
+                                                onPressed: () async {
+                                                  final surveyId = survey['id'];
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection(
+                                                          'notifications')
+                                                      .where('studentId',
+                                                          isEqualTo:
+                                                              widget.studentId)
+                                                      .where('surveyId',
+                                                          isEqualTo: surveyId)
+                                                      .get()
+                                                      .then((snapshot) {
+                                                    for (var doc
+                                                        in snapshot.docs) {
+                                                      doc.reference.delete();
+                                                    }
+                                                  });
 
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        SurveyQuestionsPage(
-                                                      studentId:
-                                                          widget.studentId,
-                                                      surveyId: survey['id'],
-                                                      studentGroup:
-                                                          widget.studentGroup,
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          SurveyQuestionsPage(
+                                                        studentId:
+                                                            widget.studentId,
+                                                        surveyId: survey['id'],
+                                                        studentGroup:
+                                                            widget.studentGroup,
+                                                      ),
                                                     ),
-                                                  ),
-                                                );
-                                              },
-                                              child: const Text("Start Survey"),
-                                            ),
+                                                  );
+                                                },
+                                                child:
+                                                    const Text("Start Survey"),
+                                              ),
+                                      ),
                                     ),
                                   );
                                 },

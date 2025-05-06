@@ -42,7 +42,7 @@ class _Group extends State<Group> {
                   children: [
                     SubjectCard(
                       title: "CS/STAT",
-                      image: "assets/stat_cs.png",
+                      image: "assets/CS_STAT.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
@@ -53,7 +53,7 @@ class _Group extends State<Group> {
                     ),
                     SubjectCard(
                       title: "CS/MATH",
-                      image: "assets/math_cs.png",
+                      image: "assets/CS_MATH.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
@@ -64,7 +64,7 @@ class _Group extends State<Group> {
                     ),
                     SubjectCard(
                       title: "CHEMISTRY",
-                      image: "assets/chemistry.png",
+                      image: "assets/CHEMISTRY.jpg",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
@@ -75,7 +75,7 @@ class _Group extends State<Group> {
                     ),
                     SubjectCard(
                       title: "CS",
-                      image: "assets/chemistry.png",
+                      image: "assets/CS.jpg",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
@@ -86,7 +86,7 @@ class _Group extends State<Group> {
                     ),
                     SubjectCard(
                       title: "BIOLOGY",
-                      image: "assets/chemistry.png",
+                      image: "assets/biology.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,

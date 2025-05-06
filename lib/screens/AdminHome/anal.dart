@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:ui';
@@ -25,12 +24,6 @@ class _DataPageState extends State<DataPage> {
   String? errorMessage;
   List<MapEntry<String, int>> sortedDepartments = [];
 
-  Color getRandomColor() {
-    final random = Random();
-    return Color.fromARGB(
-        255, random.nextInt(200), random.nextInt(200), random.nextInt(200));
-  }
-
   final GlobalKey _screenshotKey = GlobalKey();
 
   @override
@@ -41,10 +34,22 @@ class _DataPageState extends State<DataPage> {
 
   Future<void> fetchData() async {
     try {
+      // Set a timeout for the Firestore queries
       final studentsSnapshot =
-          await FirebaseFirestore.instance.collection('students').get();
+          await FirebaseFirestore.instance.collection('students').get().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException('Fetching students data timed out');
+        },
+      );
+
       final surveysSnapshot =
-          await FirebaseFirestore.instance.collection('surveys').get();
+          await FirebaseFirestore.instance.collection('surveys').get().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException('Fetching surveys data timed out');
+        },
+      );
 
       departmentCounts.clear();
       totalStudents = 0;
@@ -67,10 +72,30 @@ class _DataPageState extends State<DataPage> {
           ..sort((a, b) => a.key.compareTo(b.key));
       });
     } catch (e) {
+      print("Error in fetchData: $e");
       setState(() {
         isLoading = false;
         errorMessage = "Error fetching data: $e";
       });
+
+      // Show a snackbar with the error
+      if (mounted && context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to load data: ${e.toString()}"),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                });
+                fetchData();
+              },
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -229,7 +254,25 @@ class _DataPageState extends State<DataPage> {
     if (departmentCounts.isEmpty) {
       return const Center(child: Text("No student data available"));
     }
-    final colors = sortedDepartments.map((_) => getRandomColor()).toList();
+    // Replace the random colors line with this predefined color list
+    final List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.indigo,
+      Colors.cyan,
+      Colors.brown,
+      Colors.lime,
+      Colors.deepOrange,
+      Colors.lightBlue,
+      Colors.lightGreen,
+      // Add more colors if you have more departments
+    ];
 
     return Scaffold(
       appBar: AppBar(
