@@ -100,9 +100,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            "Add Student to ${groupNameMap[widget.groupId] ?? 'Unknown Group'}",
-            style: TextStyle(color: Colors.white)),
+        title: Text("Add Student", style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -121,6 +119,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
               controller: _studentIdController,

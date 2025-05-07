@@ -277,6 +277,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
               controller: _studentIdController,

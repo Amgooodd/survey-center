@@ -962,54 +962,75 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                                 var question = _questions[index];
                                 return Card(
                                   margin: const EdgeInsets.all(10),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          question['title'] ??
-                                              'Untitled Question',
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        if (question['type'] ==
-                                            'multiple_choice')
-                                          Column(
-                                            children: (question['options']
-                                                    as List<dynamic>)
-                                                .map<Widget>((option) =>
-                                                    RadioListTile(
-                                                      title: Text(option),
-                                                      value: option,
-                                                      groupValue: _answers[
-                                                          question['title']],
-                                                      onChanged: (value) {
-                                                        setState(() {
-                                                          _answers[question[
-                                                              'title']] = value;
-                                                        });
-                                                      },
-                                                    ))
-                                                .toList(),
-                                          ),
-                                        if (question['type'] == 'textfield')
-                                          TextField(
-                                            decoration: InputDecoration(
-                                              border: OutlineInputBorder(),
-                                              hintText: "Enter your Answer...",
-                                            ),
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _answers[question['title']] =
-                                                    value;
-                                              });
-                                            },
-                                          ),
+                                  color: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.4),
+                                          blurRadius: 5,
+                                          spreadRadius: 2,
+                                          offset: Offset(0, 2),
+                                        )
                                       ],
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            question['title'] ??
+                                                'Untitled Question',
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          if (question['type'] ==
+                                              'multiple_choice')
+                                            Column(
+                                              children: (question['options']
+                                                      as List<dynamic>)
+                                                  .map<Widget>((option) =>
+                                                      RadioListTile(
+                                                        title: Text(option),
+                                                        value: option,
+                                                        groupValue: _answers[
+                                                            question['title']],
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            _answers[question[
+                                                                    'title']] =
+                                                                value;
+                                                          });
+                                                        },
+                                                      ))
+                                                  .toList(),
+                                            ),
+                                          if (question['type'] == 'textfield')
+                                            TextField(
+                                              decoration: InputDecoration(
+                                                border: OutlineInputBorder(),
+                                                hintText:
+                                                    "Enter your Answer...",
+                                              ),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  _answers[question['title']] =
+                                                      value;
+                                                });
+                                              },
+                                            ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 );
@@ -1064,6 +1085,7 @@ class ThankYouPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1076,7 +1098,11 @@ class ThankYouPage extends StatelessWidget {
             const SizedBox(height: 20),
             const Text(
               "Thank you for completing the survey!",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: const Color.fromARGB(255, 28, 51, 95),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),

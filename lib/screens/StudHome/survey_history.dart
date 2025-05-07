@@ -117,85 +117,103 @@ class _SurveyHistoryPageState extends State<SurveyHistoryPage> {
                       response['answers'] as Map<String, dynamic>? ?? {};
 
                   return Card(
-                    color: const Color.fromARGB(255, 205, 205, 205),
-                    elevation: 2,
-                    child: StatefulBuilder(
-                      builder: (context, setInnerState) {
-                        return ExpansionTile(
-                          title: Text(
-                            survey['name'] ?? "Unnamed Survey",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: const Color.fromARGB(255, 28, 51, 95),
-                            ),
-                          ),
-                          initiallyExpanded: _isExpanded[responseId] ?? false,
-                          onExpansionChanged: (bool expanded) {
-                            setInnerState(() {
-                              _isExpanded[responseId] = expanded;
-                            });
-                          },
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("Your Answers:",
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold)),
-                                  SizedBox(height: 10),
-                                  ...questions.map<Widget>((question) {
-                                    final answer =
-                                        answers[question['title']] ?? "";
-
-                                    if (_editingResponseId == responseId) {
-                                      if (question['type'] ==
-                                          'multiple_choice') {
-                                        _editedAnswers[question['title']] =
-                                            answer;
-                                      } else {
-                                        final controllerKey =
-                                            '${responseId}${question['title']}';
-                                        if (!_textControllers
-                                            .containsKey(controllerKey)) {
-                                          _textControllers[controllerKey] =
-                                              TextEditingController(
-                                                  text: answer);
-                                        }
-                                      }
-                                    }
-
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                            question['title'] ??
-                                                "Untitled Question",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
-                                        SizedBox(height: 5),
-                                        _editingResponseId == responseId
-                                            ? _buildEditableAnswer(
-                                                question, answer)
-                                            : Text(answer.toString()),
-                                        SizedBox(height: 10),
-                                      ],
-                                    );
-                                  }).toList(),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [],
-                                  ),
-                                ],
+                    margin: const EdgeInsets.all(10),
+                    color: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 5,
+                            spreadRadius: 2,
+                            offset: Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      child: StatefulBuilder(
+                        builder: (context, setInnerState) {
+                          return ExpansionTile(
+                            title: Text(
+                              survey['name'] ?? "Unnamed Survey",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: const Color.fromARGB(255, 28, 51, 95),
                               ),
                             ),
-                          ],
-                        );
-                      },
+                            initiallyExpanded: _isExpanded[responseId] ?? false,
+                            onExpansionChanged: (bool expanded) {
+                              setInnerState(() {
+                                _isExpanded[responseId] = expanded;
+                              });
+                            },
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Your Answers:",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold)),
+                                    SizedBox(height: 10),
+                                    ...questions.map<Widget>((question) {
+                                      final answer =
+                                          answers[question['title']] ?? "";
+
+                                      if (_editingResponseId == responseId) {
+                                        if (question['type'] ==
+                                            'multiple_choice') {
+                                          _editedAnswers[question['title']] =
+                                              answer;
+                                        } else {
+                                          final controllerKey =
+                                              '${responseId}${question['title']}';
+                                          if (!_textControllers
+                                              .containsKey(controllerKey)) {
+                                            _textControllers[controllerKey] =
+                                                TextEditingController(
+                                                    text: answer);
+                                          }
+                                        }
+                                      }
+
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                              question['title'] ??
+                                                  "Untitled Question",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          SizedBox(height: 5),
+                                          _editingResponseId == responseId
+                                              ? _buildEditableAnswer(
+                                                  question, answer)
+                                              : Text(answer.toString()),
+                                          SizedBox(height: 10),
+                                        ],
+                                      );
+                                    }).toList(),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   );
                 },

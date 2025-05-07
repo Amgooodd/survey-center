@@ -153,7 +153,7 @@ class _SplashScreenState extends State<SplashScreen>
                               alignment: Alignment.center,
                               children: [
                                 const Text(
-                                  'G',
+                                  'c',
                                   style: TextStyle(
                                     fontSize: 50,
                                     fontWeight: FontWeight.bold,
@@ -171,7 +171,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                             alignment: PlaceholderAlignment.middle,
                           ),
-                          const TextSpan(text: 'enie'),
+                          const TextSpan(text: 'enter'),
                         ],
                       ),
                     ),

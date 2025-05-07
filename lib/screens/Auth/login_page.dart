@@ -151,6 +151,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
           },
         ),
       ),
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -187,6 +188,8 @@ class _CombinedLoginState extends State<CombinedLogin> {
               children: [
                 Checkbox(
                   value: _rememberMe,
+                  checkColor: Colors.white,
+                  activeColor: Color.fromARGB(255, 28, 51, 95),
                   onChanged: (value) {
                     setState(() {
                       _rememberMe = value ?? false;
@@ -445,6 +448,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           },
         ),
       ),
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -496,6 +500,8 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               Row(
                 children: [
                   Checkbox(
+                    checkColor: Colors.white,
+                    activeColor: Color.fromARGB(255, 28, 51, 95),
                     value: _rememberMe,
                     onChanged: (value) {
                       setState(() {
@@ -642,6 +648,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(

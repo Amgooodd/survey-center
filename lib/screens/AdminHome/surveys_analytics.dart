@@ -251,7 +251,7 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
       appBar: AppBar(
         title: Text('Students answers', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
-        actions: [
+        /*actions: [
           IconButton(
             icon: const Icon(
               Icons.table_chart,
@@ -260,7 +260,7 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
             tooltip: 'تصدير Excel',
             onPressed: _loading ? null : exportToExcel,
           ),
-        ],
+        ],*/
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -304,9 +304,9 @@ class _SurveyAnalysisPageState extends State<SurveyAnalysisPage> {
       String question, Map<String, int> answers) {
     final total = answers.values.fold(0, (a, b) => a + b);
     final List<Color> colors = [
-      Colors.blue,
-      Colors.red,
       Colors.green,
+      Colors.red,
+      Colors.blue,
       Colors.orange,
       Colors.purple,
       Colors.teal,
