@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_questionnaire/providers/user_provider.dart';
+import 'package:student_questionnaire/screens/AppStart/Welcome_screen.dart';
 import '../StudHome/student_home.dart';
 
 class CombinedLogin extends StatefulWidget {
@@ -45,7 +46,7 @@ class _CombinedLoginState extends State<CombinedLogin> {
           ),
         );
       } else if (userType == 'admin' && userId != null) {
-        // Check if user is super admin
+        
         final adminDoc = await FirebaseFirestore.instance
             .collection('admins')
             .doc(userId)
@@ -137,6 +138,16 @@ class _CombinedLoginState extends State<CombinedLogin> {
     );
   }
 
+Future<void> _showTutorialAgain() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('dont_show_onboarding'); 
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => FirstImageScreen()),
+    );
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,12 +155,13 @@ class _CombinedLoginState extends State<CombinedLogin> {
         title: const Text('Login', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 28, 51, 95),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushNamed(context, '/first');
-          },
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: _showTutorialAgain, 
+            tooltip: 'Show Tutorial',
+          ),
+        ],
       ),
       backgroundColor: Colors.white,
       body: Padding(
@@ -333,8 +345,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
       final email = doc.data()?['email'] as String?;
 
-      // ignore: unused_local_variable
-      final defaultPassword = doc.data()?['defaultPassword'] as String?;
+      
       if (email == null) throw Exception('Email not found in database');
 
       final userCredential =
@@ -359,7 +370,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         await prefs.setString('user_id', widget.adminId);
       }
 
-      // Update the UserProvider with the super admin status
+      
       Provider.of<UserProvider>(context, listen: false)
           .setSuperAdmin(isSuperAdmin);
 
