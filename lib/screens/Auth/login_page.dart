@@ -851,9 +851,22 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
 
 Future<void> logout(BuildContext context) async {
   final prefs = await SharedPreferences.getInstance();
+  
+  
+  final bool dontShowOnboarding = prefs.getBool('dont_show_onboarding') ?? false;
+  
+  
   await prefs.clear();
+  
+  
+  if (dontShowOnboarding) {
+    await prefs.setBool('dont_show_onboarding', true);
+  }
+  
+  
   await FirebaseAuth.instance.signOut();
 
+  
   Navigator.pushAndRemoveUntil(
     context,
     MaterialPageRoute(builder: (context) => const CombinedLogin()),
