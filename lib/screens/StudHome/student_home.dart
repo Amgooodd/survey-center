@@ -245,7 +245,7 @@ class _StudentFormState extends State<StudentForm> {
               ),
             );
 
-            // If user confirmed, proceed with logout
+            
             if (confirmed == true) {
               logout(context);
             }
@@ -836,11 +836,20 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       );
       return;
     }
+     DocumentSnapshot studentSnapshot = await FirebaseFirestore.instance
+      .collection('students')
+      .doc(widget.studentId)
+      .get();
+  
+  
+  String studentName = 
+    (studentSnapshot.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown';
     await FirebaseFirestore.instance.collection('students_responses').add({
       'studentId': widget.studentId,
       'surveyId': widget.surveyId,
       'answers': _answers,
       'timestamp': FieldValue.serverTimestamp(),
+      'studentName': studentName,
     });
     if (!_allowMultipleSubmissions) {
       setState(() => hasSubmitted = true);

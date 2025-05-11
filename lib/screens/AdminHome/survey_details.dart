@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:student_questionnaire/Features/download_excel.dart';
+import 'package:student_questionnaire/screens/AdminHome/answer_view_page.dart';
 import 'surveys_analytics.dart';
 
 class SurveyDetailsScreen extends StatefulWidget {
@@ -536,6 +537,36 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
                     },
                   ),
                 ),
+                  const SizedBox(height: 20),
+      
+      Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AnswerViewPage(surveyId: widget.survey.id),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue, 
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.list_alt, color: Colors.white),
+                SizedBox(width: 10),
+                Text(
+                  'View Answers',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
