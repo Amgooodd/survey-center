@@ -941,7 +941,7 @@ class SurveyCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
       child: Container(
-        height: 130,
+        height: 160,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
@@ -963,41 +963,43 @@ class SurveyCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: const Color.fromARGB(255, 28, 51, 95),
+                    Flexible(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color.fromARGB(255, 28, 51, 95),
+                              ),
                             ),
                           ),
-                        ),
-                        FutureBuilder<int>(
-                          future: _getResponseCount(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                          FutureBuilder<int>(
+                            future: _getResponseCount(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                );
+                              }
+                              if (snapshot.hasError) return const Text('?');
+                              return Text(
+                                '(${snapshot.data ?? 0} responses)',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: const Color.fromARGB(255, 43, 77, 140),
+                                ),
                               );
-                            }
-                            if (snapshot.hasError) return const Text('?');
-                            return Text(
-                              '(${snapshot.data ?? 0} responses)',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: const Color.fromARGB(255, 43, 77, 140),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                     Text(
                       subtitle,
@@ -1024,7 +1026,11 @@ class SurveyCard extends StatelessWidget {
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                                 backgroundColor:
-                                    const Color.fromARGB(255, 253, 200, 0)),
+                                    const Color.fromARGB(255, 253, 200, 0),
+                                minimumSize: Size(100, 36), // Set minimum size
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8)), // Add padding
                             onPressed: () {
                               Navigator.push(
                                 context,

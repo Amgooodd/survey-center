@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 import 'dart:ui';
@@ -8,6 +9,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/rendering.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/Bottom_bar.dart';
 
 class DataPage extends StatefulWidget {
@@ -29,31 +31,75 @@ class _DataPageState extends State<DataPage> {
   @override
   void initState() {
     super.initState();
+    // Try to load cached data first
+    _loadCachedData();
+    // Then fetch fresh data
     fetchData();
   }
 
+  Future<void> _loadCachedData() async {
+    // This is a simple example using shared_preferences
+    // You'll need to add the package to your pubspec.yaml
+    final prefs = await SharedPreferences.getInstance();
+    final cachedData = prefs.getString('analytics_data');
+    if (cachedData != null) {
+      try {
+        final data = jsonDecode(cachedData);
+        setState(() {
+          totalStudents = data['totalStudents'] ?? 0;
+          totalSurveys = data['totalSurveys'] ?? 0;
+          // Load other cached data
+        });
+      } catch (e) {
+        print('Error loading cached data: $e');
+      }
+    }
+  }
+
+  // Save data to cache after successful fetch
+  void _saveCacheData() {
+    final data = {
+      'totalStudents': totalStudents,
+      'totalSurveys': totalSurveys,
+      'departmentCounts': departmentCounts,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('analytics_data', jsonEncode(data));
+    });
+  }
+
+  bool _chartsLoading = true;
+
   Future<void> fetchData() async {
     try {
-      // Set a timeout for the Firestore queries
-      final studentsSnapshot =
-          await FirebaseFirestore.instance.collection('students').get().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw TimeoutException('Fetching students data timed out');
-        },
-      );
+      // First, quickly fetch just the counts
+      setState(() {
+        isLoading = true;
+      });
 
-      final surveysSnapshot =
-          await FirebaseFirestore.instance.collection('surveys').get().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw TimeoutException('Fetching surveys data timed out');
-        },
-      );
+      // Get survey count first (usually faster)
+      final surveysSnapshot = await FirebaseFirestore.instance
+          .collection('surveys')
+          .get()
+          .timeout(const Duration(seconds: 10));
+
+      totalSurveys = surveysSnapshot.size;
+
+      // Update UI with partial data
+      setState(() {
+        isLoading = false;
+        _chartsLoading = true; // Still loading detailed data
+      });
+
+      // Now fetch the more detailed student data for charts
+      final studentsSnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .get()
+          .timeout(const Duration(seconds: 15));
 
       departmentCounts.clear();
       totalStudents = 0;
-      totalSurveys = surveysSnapshot.size;
 
       if (studentsSnapshot.docs.isNotEmpty) {
         for (var doc in studentsSnapshot.docs) {
@@ -66,11 +112,14 @@ class _DataPageState extends State<DataPage> {
       }
 
       setState(() {
-        isLoading = false;
+        _chartsLoading = false;
         errorMessage = null;
         sortedDepartments = departmentCounts.entries.toList()
           ..sort((a, b) => a.key.compareTo(b.key));
       });
+
+      // Save data to cache for faster loading next time
+      _saveCacheData();
     } catch (e) {
       print("Error in fetchData: $e");
       setState(() {
@@ -245,15 +294,175 @@ class _DataPageState extends State<DataPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+    if (isLoading || _chartsLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title:
+              Text('Students analytics', style: TextStyle(color: Colors.white)),
+          backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.popUntil(
+                context,
+                (route) => route.settings.name == '/firsrforadminn',
+              );
+            },
+          ),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Skeleton for info cards
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: List.generate(
+                    3,
+                    (index) => Flexible(
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            child: Card(
+                              color: Colors.grey[200],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 4,
+                              child: Container(
+                                height: 100,
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                child: Center(
+                                  child: LinearProgressIndicator(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )),
+              ),
+              const SizedBox(height: 30),
+              // Skeleton for charts
+              Container(
+                height: 300,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Loading charts...",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 16),
+                      CircularProgressIndicator(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: const BottomNavigationBarWidget(anall: true),
+      );
     }
+
     if (errorMessage != null) {
-      return Center(child: Text(errorMessage!));
+      return Scaffold(
+        appBar: AppBar(
+          title:
+              Text('Students analytics', style: TextStyle(color: Colors.white)),
+          backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.popUntil(
+                context,
+                (route) => route.settings.name == '/firsrforadminn',
+              );
+            },
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Colors.red),
+              SizedBox(height: 16),
+              Text(errorMessage!, style: TextStyle(fontSize: 16)),
+              SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isLoading = true;
+                  });
+                  fetchData();
+                },
+                child: Text("Retry"),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: const BottomNavigationBarWidget(anall: true),
+      );
     }
+
     if (departmentCounts.isEmpty) {
-      return const Center(child: Text("No student data available"));
+      return Scaffold(
+        appBar: AppBar(
+          title:
+              Text('Students analytics', style: TextStyle(color: Colors.white)),
+          backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.popUntil(
+                context,
+                (route) => route.settings.name == '/firsrforadminn',
+              );
+            },
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school_outlined, size: 48, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                "No student data available",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "Add students to see analytics",
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isLoading = true;
+                  });
+                  fetchData();
+                },
+                child: Text("Refresh"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: const BottomNavigationBarWidget(anall: true),
+      );
     }
+
     // Replace the random colors line with this predefined color list
     final List<Color> colors = [
       Colors.blue,

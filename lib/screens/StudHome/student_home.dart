@@ -262,12 +262,75 @@ class _StudentFormState extends State<StudentForm> {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
-                      return NotificationsDialog(
-                        notifications: _notifications,
-                        markNotificationAsRead: _markNotificationAsRead,
-                        markAllNotificationsAsRead: _markAllNotificationsAsRead,
-                        studentId: widget.studentId,
-                        studentGroup: widget.studentGroup,
+                      return Dialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Container(
+                          constraints: BoxConstraints(
+                            maxHeight: _notifications.isEmpty
+                                ? MediaQuery.of(context).size.height * 0.25
+                                : MediaQuery.of(context).size.height * 0.6,
+                            maxWidth: MediaQuery.of(context).size.width * 0.9,
+                          ),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Notifications',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Divider(height: 1),
+                              if (_notifications.isEmpty)
+                                Expanded(
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.notifications_off,
+                                          size: 48,
+                                          color: Colors.grey,
+                                        ),
+                                        SizedBox(height: 16),
+                                        Text(
+                                          "No new notifications",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[700],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              else
+                                Expanded(
+                                  child: NotificationsDialog(
+                                    notifications: _notifications,
+                                    markNotificationAsRead:
+                                        _markNotificationAsRead,
+                                    markAllNotificationsAsRead:
+                                        _markAllNotificationsAsRead,
+                                    studentId: widget.studentId,
+                                    studentGroup: widget.studentGroup,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   );
@@ -398,10 +461,9 @@ class _StudentFormState extends State<StudentForm> {
                     );
                   },
                 ),
-                SizedBox(height: 10),
                 Container(
-                  width: 350,
-                  height: 150,
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  height: MediaQuery.of(context).size.height * 0.2,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
                     borderRadius: BorderRadius.circular(6),
@@ -414,7 +476,7 @@ class _StudentFormState extends State<StudentForm> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
@@ -765,10 +827,26 @@ class _NotificationsDialogState extends State<NotificationsDialog> {
                 },
               ),
             )
-          : const Center(child: Text('No new notifications')),
+          : SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.notifications_off, size: 48, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No new notifications',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
       actions: [
         TextButton(
-          onPressed: widget.markAllNotificationsAsRead,
+          onPressed: widget.notifications.isEmpty
+              ? null
+              : widget.markAllNotificationsAsRead,
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
