@@ -245,7 +245,7 @@ class _StudentFormState extends State<StudentForm> {
               ),
             );
 
-            // If user confirmed, proceed with logout
+            
             if (confirmed == true) {
               logout(context);
             }
@@ -883,6 +883,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
   bool _allowMultipleSubmissions = false;
   DateTime? _deadline;
   late Timer _timer;
+  late String _surveyName = 'Loading...';
 
   @override
   void initState() {
@@ -914,11 +915,20 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       );
       return;
     }
+     DocumentSnapshot studentSnapshot = await FirebaseFirestore.instance
+      .collection('students')
+      .doc(widget.studentId)
+      .get();
+  
+  
+  String studentName = 
+    (studentSnapshot.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown';
     await FirebaseFirestore.instance.collection('students_responses').add({
       'studentId': widget.studentId,
       'surveyId': widget.surveyId,
       'answers': _answers,
       'timestamp': FieldValue.serverTimestamp(),
+      'studentName': studentName,
     });
     if (!_allowMultipleSubmissions) {
       setState(() => hasSubmitted = true);
@@ -940,12 +950,15 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
         .doc(widget.surveyId)
         .get();
     if (!surveySnapshot.exists) return;
+    final data = surveySnapshot.data() as Map<String, dynamic>?;
+
     setState(() {
       _allowMultipleSubmissions =
           surveySnapshot['allow_multiple_submissions'] ?? false;
       _deadline = surveySnapshot['deadline'] != null
           ? (surveySnapshot['deadline'] as Timestamp).toDate()
           : null;
+         _surveyName = data?['name'] ?? 'Survey'; 
     });
     if (!_allowMultipleSubmissions) {
       QuerySnapshot response = await FirebaseFirestore.instance
@@ -1009,10 +1022,14 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            "Survey Questions",
-            style: TextStyle(color: Colors.white),
-          ),
+          title: Flexible( 
+    child: Text(
+      _surveyName,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis, 
+      style: const TextStyle(color: Colors.white), 
+    ),
+  ),
           backgroundColor: const Color.fromARGB(255, 28, 51, 95),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -1069,7 +1086,10 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                                                 'Untitled Question',
                                             style: const TextStyle(
                                                 fontSize: 18,
-                                                fontWeight: FontWeight.bold),
+                                                fontWeight: FontWeight.bold,
+                                                color:  Color.fromARGB(255, 28, 51, 95),
+                                                ),
+                                                
                                           ),
                                           const SizedBox(height: 10),
                                           if (question['type'] ==
@@ -1095,18 +1115,19 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
                                             ),
                                           if (question['type'] == 'textfield')
                                             TextField(
-                                              decoration: InputDecoration(
-                                                border: OutlineInputBorder(),
-                                                hintText:
-                                                    "Enter your Answer...",
-                                              ),
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _answers[question['title']] =
-                                                      value;
-                                                });
-                                              },
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Enter your Answer...",
                                             ),
+                                            minLines: 1,          
+                                            maxLines: null,       
+                                            keyboardType: TextInputType.multiline, 
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _answers[question['title']] = value;
+                                              });
+                                            },
+                                          ),
                                         ],
                                       ),
                                     ),

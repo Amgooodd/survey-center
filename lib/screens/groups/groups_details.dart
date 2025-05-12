@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:student_questionnaire/asset_map.dart';
 import 'package:student_questionnaire/screens/groups/add_student.dart';
 import '../../widgets/Bottom_bar.dart';
 
@@ -39,7 +40,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                 borderRadius: BorderRadius.circular(6),
                 image: DecorationImage(
                   image: AssetImage(
-                      'assets/${widget.groupId.toLowerCase().replaceAll("/", "_")}.png'),
+                     'assets/${assetMap[widget.groupId.toLowerCase().replaceAll("/", "_")]}.png'),
                   fit: BoxFit.cover,
                 ),
               ),
