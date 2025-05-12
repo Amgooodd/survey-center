@@ -42,7 +42,7 @@ class _Group extends State<Group> {
                   children: [
                     SubjectCard(
                       title: "CS/STAT",
-                      image: "assets/cs_stat.png",
+                      image: "assets/CS_STAT.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
@@ -53,7 +53,7 @@ class _Group extends State<Group> {
                     ),
                     SubjectCard(
                       title: "CS/MATH",
-                      image: "assets/cs_math.png",
+                      image: "assets/CS_MATH.png",
                       onTap: () {
                         Navigator.pushNamed(
                           context,
