@@ -19,12 +19,14 @@ class DataPage extends StatefulWidget {
 }
 
 class _DataPageState extends State<DataPage> {
+  // Removed AutomaticKeepAliveClientMixin as it's not needed and might cause issues
   Map<String, int> departmentCounts = {};
   int totalStudents = 0;
   int totalSurveys = 0;
   bool isLoading = true;
   String? errorMessage;
   List<MapEntry<String, int>> sortedDepartments = [];
+  bool _isFirstLoad = true;
 
   final GlobalKey _screenshotKey = GlobalKey();
 
@@ -35,6 +37,35 @@ class _DataPageState extends State<DataPage> {
     _loadCachedData();
     // Then fetch fresh data
     fetchData();
+  }
+
+  // Add a method to force refresh when the page becomes visible
+  void refreshData() {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+      fetchData();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // This will ensure data is refreshed when returning to this page
+    if (!_isFirstLoad) {
+      refreshData();
+    }
+    _isFirstLoad = false;
+  }
+
+  // Add this method to handle page visibility changes
+  @override
+  void activate() {
+    super.activate();
+    // This gets called when the page is reactivated (e.g., when returning to it)
+    refreshData();
   }
 
   Future<void> _loadCachedData() async {
@@ -72,17 +103,22 @@ class _DataPageState extends State<DataPage> {
   bool _chartsLoading = true;
 
   Future<void> fetchData() async {
+    if (!mounted) return; // Check if widget is still mounted
+
     try {
       // First, quickly fetch just the counts
       setState(() {
         isLoading = true;
+        errorMessage = null; // Reset error message
       });
 
       // Get survey count first (usually faster)
       final surveysSnapshot = await FirebaseFirestore.instance
           .collection('surveys')
           .get()
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15)); // Increased timeout for mobile
+
+      if (!mounted) return; // Check again after async operation
 
       totalSurveys = surveysSnapshot.size;
 
@@ -96,7 +132,9 @@ class _DataPageState extends State<DataPage> {
       final studentsSnapshot = await FirebaseFirestore.instance
           .collection('students')
           .get()
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 20)); // Increased timeout for mobile
+
+      if (!mounted) return; // Check again after async operation
 
       departmentCounts.clear();
       totalStudents = 0;
@@ -122,13 +160,14 @@ class _DataPageState extends State<DataPage> {
       _saveCacheData();
     } catch (e) {
       print("Error in fetchData: $e");
-      setState(() {
-        isLoading = false;
-        errorMessage = "Error fetching data: $e";
-      });
-
-      // Show a snackbar with the error
       if (mounted) {
+        setState(() {
+          isLoading = false;
+          _chartsLoading = false;
+          errorMessage = "Error fetching data: $e";
+        });
+
+        // Show a snackbar with the error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Failed to load data: ${e.toString()}"),
@@ -136,9 +175,6 @@ class _DataPageState extends State<DataPage> {
             action: SnackBarAction(
               label: 'Retry',
               onPressed: () {
-                setState(() {
-                  isLoading = true;
-                });
                 fetchData();
               },
             ),
@@ -294,6 +330,8 @@ class _DataPageState extends State<DataPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Remove this line: super.build(context); // Required for AutomaticKeepAliveClientMixin
+
     if (isLoading || _chartsLoading) {
       return Scaffold(
         appBar: AppBar(
