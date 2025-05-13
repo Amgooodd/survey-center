@@ -40,7 +40,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                 borderRadius: BorderRadius.circular(6),
                 image: DecorationImage(
                   image: AssetImage(
-                     'assets/${assetMap[widget.groupId.toLowerCase().replaceAll("/", "_")]}.png'),
+                      'assets/${assetMap[widget.groupId.toLowerCase().replaceAll("/", "_")]}.png'),
                   fit: BoxFit.cover,
                 ),
               ),

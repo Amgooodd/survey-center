@@ -195,6 +195,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
           ),
         ),
       ),
+      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<QuerySnapshot>(
@@ -219,6 +220,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                 final data = doc.data() as Map<String, dynamic>;
                 return Card(
                   elevation: 4,
+                  color: Colors.white,
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
