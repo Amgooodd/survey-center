@@ -21,7 +21,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Delay the initial fetch to ensure the widget is fully mounted
     Future.delayed(Duration.zero, () {
       if (mounted) fetchData();
     });
@@ -36,7 +35,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Refresh data when app comes to foreground
       fetchData();
     }
   }
@@ -50,7 +48,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
         errorMessage = null;
       });
 
-      // Simple approach: fetch all data in one go
       final surveysSnapshot = await FirebaseFirestore.instance
           .collection('surveys')
           .get()
@@ -63,7 +60,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
 
       if (!mounted) return;
 
-      // Process the data
       totalSurveys = surveysSnapshot.size;
       departmentCounts = {};
       totalStudents = 0;
@@ -78,7 +74,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
         }
       }
 
-      // Sort departments for consistent display
       sortedDepartments = departmentCounts.entries.toList()
         ..sort((a, b) => a.key.compareTo(b.key));
 
@@ -98,7 +93,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
     }
   }
 
-  // Simple info card widget
   Widget buildInfoCard(String title, int count, IconData icon, Color color) {
     return Card(
       color: color.withOpacity(0.2),
@@ -147,7 +141,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // Basic scaffold with loading indicator
     if (isLoading) {
       return Scaffold(
         appBar: AppBar(
@@ -172,7 +165,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
       );
     }
 
-    // Error state
     if (errorMessage != null) {
       return Scaffold(
         appBar: AppBar(
@@ -209,7 +201,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
       );
     }
 
-    // Colors for charts
     final List<Color> colors = [
       Colors.blue,
       Colors.red,
@@ -217,13 +208,8 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
       Colors.orange,
       Colors.purple,
       Colors.teal,
-      Colors.pink,
-      Colors.amber,
-      Colors.indigo,
-      Colors.cyan,
     ];
 
-    // Main content
     return Scaffold(
       appBar: AppBar(
         title: const Text('Students Analytics',
@@ -247,7 +233,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Info Cards - using Row instead of Wrap for better control
               SizedBox(
                 width: 150,
                 child: buildInfoCard(
@@ -277,11 +262,9 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
                   Colors.blue,
                 ),
               ),
-
               const SizedBox(height: 20),
               Divider(),
               const SizedBox(height: 10),
-
               Text(
                 " DEPARTMENT ANALYSIS",
                 textAlign: TextAlign.center,
@@ -293,7 +276,6 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
               const SizedBox(height: 10),
               Divider(),
               const SizedBox(height: 10),
-              // Pie Chart - only show if we have data
               if (sortedDepartments.isNotEmpty) ...[
                 const Text(
                   "PIE CHART",
@@ -335,11 +317,9 @@ class _DataPageState extends State<DataPage> with WidgetsBindingObserver {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
                 Divider(),
                 const SizedBox(height: 10),
-                // Bar Chart
                 const Text(
                   "BAR CHART",
                   style: TextStyle(
