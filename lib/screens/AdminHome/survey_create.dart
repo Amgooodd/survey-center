@@ -14,7 +14,7 @@ class CreateSurvey extends StatefulWidget {
 class _CreateSurveyState extends State<CreateSurvey> {
   final TextEditingController _surveyNameController = TextEditingController();
   List<Map<String, dynamic>> _questions = [];
-  int _questionCount = 1;
+
   final List<String> _departments = ['All', 'Stat', 'Math', 'CS', 'Chemistry'];
   List<String> _selectedDepartments = [];
   bool _allowMultipleSubmissions = false;
@@ -35,24 +35,23 @@ class _CreateSurveyState extends State<CreateSurvey> {
     });
   }
 
-  void _addQuestion(bool istextfield) {
-    setState(() {
-      if (istextfield) {
-        _questions.add({
-          'title': 'textfield $_questionCount',
-          'type': 'textfield',
-        });
-      } else {
-        _questions.add({
-          'title': 'Question $_questionCount',
-          'type': 'multiple_choice',
-          'options': ['Yes', 'No', 'Maybe'],
-        });
-      }
-      _questionCount++;
-    });
-  }
-
+void _addQuestion(bool istextfield) {
+  setState(() {
+    final questionNumber = _questions.length + 1;
+    if (istextfield) {
+      _questions.add({
+        'title': 'textfield $questionNumber',
+        'type': 'textfield',
+      });
+    } else {
+      _questions.add({
+        'title': 'Question $questionNumber',
+        'type': 'multiple_choice',
+        'options': ['Yes', 'No', 'Maybe'],
+      });
+    }
+  });
+}
   Future<void> _addSurveyToDatabase(
       String surveyName, List<Map<String, dynamic>> questions) async {
     try {
@@ -63,8 +62,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
         return;
       }
 
-      // Get the current user ID - you'll need to replace this with your actual user ID
-      // This could come from your authentication system or a stored value
+      
+      
       String currentUserId =
           FirebaseAuth.instance.currentUser?.uid ?? "unknown";
 
@@ -90,7 +89,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
         'deadline': _deadline,
         'require_exact_group_combination': _requireExactGroupCombination,
         'show_only_selected_departments': _showOnlySelectedDepartments,
-        'madyby': currentUserId, // Add the user ID who created the survey
+        'madyby': currentUserId, 
       });
       await _createNotificationsForSurvey(
           surveyRef.id, surveyName, _selectedDepartments);
@@ -180,7 +179,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
     _surveyNameController.clear();
     setState(() {
       _questions = [];
-      _questionCount = 1;
       _selectedDepartments = [];
       _deadline = null;
       _requireExactGroupCombination = false;
@@ -419,6 +417,9 @@ class _CreateSurveyState extends State<CreateSurvey> {
                         ),
                         IconButton(
                           icon: Icon(Icons.delete),
+                          color: Colors.red, 
+                          iconSize: 24, 
+                          splashColor: Colors.red.withOpacity(0.2),
                           onPressed: () => _deleteQuestion(index),
                         ),
                       ],
@@ -446,12 +447,31 @@ class _CreateSurveyState extends State<CreateSurvey> {
                               .map((optionEntry) {
                             final optionIndex = optionEntry.key;
                             final option = optionEntry.value;
+
+                            
+                            if (question['controllers'] == null) {
+                              question['controllers'] = [];
+                            }
+
+                            
+                            if (optionIndex >= question['controllers'].length) {
+                              question['controllers']
+                                  .add(TextEditingController(text: option));
+                            } else {
+                              
+                              if (question['controllers'][optionIndex].text !=
+                                  option) {
+                                question['controllers'][optionIndex].text =
+                                    option;
+                              }
+                            }
+
                             return Row(
                               children: [
                                 Expanded(
                                   child: TextField(
-                                    controller:
-                                        TextEditingController(text: option),
+                                    controller: question['controllers']
+                                        [optionIndex],
                                     onChanged: (newValue) {
                                       _editOption(
                                           question, optionIndex, newValue);
@@ -463,8 +483,18 @@ class _CreateSurveyState extends State<CreateSurvey> {
                                 ),
                                 IconButton(
                                   icon: Icon(Icons.delete),
+                                  color: Colors
+                                      .red, 
+                                  iconSize: 24, 
+                                  splashColor: Colors.red.withOpacity(0.2),
                                   onPressed: () {
-                                    _deleteOption(question, option);
+                                    setState(() {
+                                      
+                                      final controller = question['controllers']
+                                          .removeAt(optionIndex);
+                                      controller.dispose();
+                                      question['options'].removeAt(optionIndex);
+                                    });
                                   },
                                 ),
                               ],
@@ -476,7 +506,14 @@ class _CreateSurveyState extends State<CreateSurvey> {
                                 icon: Icon(Icons.add),
                                 onPressed: () {
                                   setState(() {
-                                    question['options'].add('New Option');
+                                    final newOption = 'New Option';
+                                    question['options'].add(newOption);
+                                    
+                                    if (question['controllers'] == null) {
+                                      question['controllers'] = [];
+                                    }
+                                    question['controllers'].add(
+                                        TextEditingController(text: newOption));
                                   });
                                 },
                               ),
@@ -540,12 +577,6 @@ class _CreateSurveyState extends State<CreateSurvey> {
     );
   }
 
-  void _deleteOption(Map<String, dynamic> question, String option) {
-    setState(() {
-      question['options'].remove(option);
-    });
-  }
-
   void _editOption(Map<String, dynamic> question, int index, String newValue) {
     setState(() {
       question['options'][index] = newValue;
@@ -555,6 +586,15 @@ class _CreateSurveyState extends State<CreateSurvey> {
   void _deleteQuestion(int index) {
     setState(() {
       _questions.removeAt(index);
+      
+      for (int i = 0; i < _questions.length; i++) {
+        final question = _questions[i];
+        if (question['title'].startsWith('Question ')) {
+          question['title'] = 'Question ${i + 1}';
+        } else if (question['title'].startsWith('textfield ')) {
+          question['title'] = 'textfield ${i + 1}';
+        }
+      }
     });
   }
 }

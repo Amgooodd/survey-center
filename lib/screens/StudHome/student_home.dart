@@ -1021,7 +1021,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            _surveyName != null && _surveyName.isNotEmpty
+            _surveyName.isNotEmpty
                 ? _surveyName
                 : 'Survey',
             maxLines: 1,
