@@ -27,35 +27,31 @@ class _StudentFormState extends State<StudentForm> {
   late Timer _timer;
   String _selectedSortOption = 'newest';
   String _searchQuery = '';
+  StreamSubscription<QuerySnapshot>? _surveySubscription;
 
   @override
   void initState() {
     super.initState();
-    _fetchSurveys();
+    _setupSurveyStream();
     _fetchNotifications();
     _startTimer();
   }
 
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
-      setState(() {});
-      _updateSurveyNotifications();
+  void _setupSurveyStream() {
+    _surveySubscription = FirebaseFirestore.instance
+        .collection('surveys')
+        .snapshots()
+        .listen((snapshot) {
+      _processSurveys(snapshot);
     });
   }
 
-  Future<void> _fetchSurveys() async {
+  void _processSurveys(QuerySnapshot snapshot) {
     List<String> studentGroupComponents = widget.studentGroup
         .split('/')
         .map((e) => e.trim().toUpperCase())
         .toList();
-    QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('surveys').get();
+
     setState(() {
       _surveys = snapshot.docs.where((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -83,29 +79,50 @@ class _StudentFormState extends State<StudentForm> {
                 (surveyDept) => studentGroupComponents.contains(surveyDept));
           }
         }
-      }).map((doc) {
+        }).map((doc) {
         var data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
         return data;
       }).toList();
-      _surveys.sort((a, b) {
-        switch (_selectedSortOption) {
-          case 'newest':
-            Timestamp aTime = a['timestamp'] ?? Timestamp.now();
-            Timestamp bTime = b['timestamp'] ?? Timestamp.now();
-            return bTime.compareTo(aTime);
-          case 'oldest':
-            Timestamp aTime = a['timestamp'] ?? Timestamp.now();
-            Timestamp bTime = b['timestamp'] ?? Timestamp.now();
-            return aTime.compareTo(bTime);
-          case 'a-z':
-            String aName = a['name']?.toString().toLowerCase() ?? '';
-            String bName = b['name']?.toString().toLowerCase() ?? '';
-            return aName.compareTo(bName);
-          default:
-            return 0;
-        }
-      });
+
+      _sortSurveys(); 
+    });
+  }
+  void _sortSurveys() {
+    _surveys.sort((a, b) {
+      switch (_selectedSortOption) {
+        case 'newest':
+          Timestamp aTime = a['timestamp'] ?? Timestamp.now();
+          Timestamp bTime = b['timestamp'] ?? Timestamp.now();
+          return bTime.compareTo(aTime);
+        case 'oldest':
+          Timestamp aTime = a['timestamp'] ?? Timestamp.now();
+          Timestamp bTime = b['timestamp'] ?? Timestamp.now();
+          return aTime.compareTo(bTime);
+        case 'a-z':
+          String aName = a['name']?.toString().toLowerCase() ?? '';
+          String bName = b['name']?.toString().toLowerCase() ?? '';
+          return aName.compareTo(bName);
+        default:
+          return 0;
+      }
+    });
+  }
+
+
+    
+
+  @override
+  void dispose() {
+    _surveySubscription?.cancel();
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
+      setState(() {});
+      _updateSurveyNotifications();
     });
   }
 
@@ -548,7 +565,7 @@ class _StudentFormState extends State<StudentForm> {
                                   if (value != null) {
                                     setState(() {
                                       _selectedSortOption = value;
-                                      _fetchSurveys();
+                                      _sortSurveys();
                                     });
                                   }
                                 },

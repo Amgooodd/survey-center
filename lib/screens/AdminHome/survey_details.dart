@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:student_questionnaire/Features/download_excel.dart';
 import 'package:student_questionnaire/screens/AdminHome/answer_view_page.dart';
 import 'surveys_analytics.dart';
@@ -66,13 +67,17 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
       );
     }
   }
-
+   bool _forceExpired = false;
   Future<void> _endSurvey() async {
+     setState(() {
+    _forceExpired = true;
+  });
     await FirebaseFirestore.instance
         .collection('surveys')
         .doc(widget.survey.id)
         .update({
       'deadline': FieldValue.serverTimestamp(),
+      
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -81,6 +86,9 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
   }
 
   Future<void> _resetSurvey() async {
+    setState(() {
+    _forceExpired =false;
+  });
     await FirebaseFirestore.instance
         .collection('surveys')
         .doc(widget.survey.id)
@@ -401,6 +409,15 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
         final formattedTime = timestamp != null
             ? '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}'
             : 'N/A';
+      final deadline = data['deadline'] as Timestamp?;
+final formattedDeadline = deadline != null 
+    ? DateFormat('yyyy-MM-dd HH:mm').format(deadline.toDate())
+    : 'No deadline';
+    
+
+final bool isActuallyExpired = deadline != null && deadline.toDate().isBefore(DateTime.now());
+final bool showAsExpired = _forceExpired || isActuallyExpired;
+
 
         return Scaffold(
           appBar: AppBar(
@@ -491,16 +508,37 @@ class _SurveyDetailsScreenState extends State<SurveyDetailsScreen> {
               ),
             ],
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Departments: $departments',
-                    style: const TextStyle(fontSize: 15)),
-                Text('Created At: $formattedTime',
-                    style: const TextStyle(fontSize: 15)),
-                const SizedBox(height: 20),
+           body: Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Departments: $departments', style: const TextStyle(fontSize: 15)),
+        Text('Created At: $formattedTime', style: const TextStyle(fontSize: 15)),
+        const SizedBox(height: 5),
+      Row(
+  children: [
+    Text(
+      'Deadline: $formattedDeadline',
+      style: TextStyle(
+        fontSize: 15,
+        color: showAsExpired ? Colors.red : (deadline != null ? Colors.green : Colors.grey),
+      ),
+    ),
+    if (showAsExpired)
+      const Padding(
+        padding: EdgeInsets.only(left: 8.0),
+        child: Text(
+          '(Expired)',
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 14,
+            fontWeight: FontWeight.bold
+          ),
+        ),
+      ),
+  ],
+),
                 const Text('Questions:',
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
