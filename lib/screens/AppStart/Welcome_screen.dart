@@ -12,29 +12,28 @@ class _FirstImageScreenState extends State<FirstImageScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _dontShowAgain = false;
+  bool _imagesLoaded = false;
 
   final List<Map<String, String>> _onboardingPages = [
     {
       "image": "assets/icon/app_icon.png",
       "title": "Welcome to Survey Center",
-      "description": "Join us to begin your survey journey today!",
+      "description": "Your smart tool for academic surveys",
     },
     {
-      "image": "assets/minipic2.jpg",
+      "image": "assets/dive.jpg",
       "title": "Explore Available Surveys",
-      "description":
-          "Discover and participate in surveys tailored to your group and interests.",
+      "description": "Surveys waiting for your voice — answer now !",
     },
     {
-      "image": "assets/mainpic2.jpg",
+      "image": "assets/history.jpg",
       "title": "Track Your Survey History",
-      "description":
-          "View your completed surveys and track your progress over time.",
+      "description": "Track your participation and stay informed",
     },
     {
-      "image": "assets/mainpic.jpg",
+      "image": "assets/minipic.jpg",
       "title": "Ready to Dive In?",
-      "description": "Let's get started with your first survey!",
+      "description": "Every opinion counts !",
     },
   ];
 
@@ -42,6 +41,21 @@ class _FirstImageScreenState extends State<FirstImageScreen> {
   void initState() {
     super.initState();
     _checkOnboardingPreference();
+    _preloadImages();
+  }
+
+  // Preload all images to ensure they're cached and ready
+  Future<void> _preloadImages() async {
+    for (var page in _onboardingPages) {
+      // Precache each image
+      await precacheImage(AssetImage(page["image"]!), context);
+    }
+
+    if (mounted) {
+      setState(() {
+        _imagesLoaded = true;
+      });
+    }
   }
 
   Future<void> _checkOnboardingPreference() async {
@@ -96,6 +110,14 @@ class _FirstImageScreenState extends State<FirstImageScreen> {
                             fit: BoxFit.cover,
                           ),
                         ),
+                        // Show a loading indicator if images aren't loaded yet
+                        child: !_imagesLoaded && index != 0
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  color: const Color.fromARGB(255, 28, 51, 95),
+                                ),
+                              )
+                            : null,
                       ),
                       // Text content below the image
                       Expanded(
