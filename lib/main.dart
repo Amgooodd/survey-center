@@ -14,7 +14,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final ConnectivityService _connectivityService = ConnectivityService();
-  final _navigatorKey = GlobalKey<NavigatorState>(); 
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  OverlayEntry? _overlayEntry;
   bool _isDialogVisible = false;
 
   @override
@@ -22,11 +23,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _connectivityService.connectionStatus.listen((connected) {
       if (!connected) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_navigatorKey.currentState?.overlay != null && !_isDialogVisible) {
-            _showNoInternetDialog();
-          }
-        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _showNoInternetDialog());
       } else {
         _dismissDialog();
       }
@@ -34,32 +31,47 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _showNoInternetDialog() {
-    _isDialogVisible = true;
-    showDialog(
-      context: _navigatorKey.currentContext!,
-      barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
-        child: AlertDialog(
-          title: const Text('No Internet Connection'),
-          content: const Text('Please check your connection and try again.'),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                final hasConnection = await _connectivityService.checkConnection();
-                if (hasConnection) Navigator.pop(context);
-              },
-              child: const Text('Retry'),
+    if (_isDialogVisible) return;
+
+    final overlay = _navigatorKey.currentState?.overlay;
+    if (overlay == null) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          
+          ModalBarrier(
+            dismissible: false,
+            color: Colors.black54,
+          ),
+          
+          Center(
+            child: AlertDialog(
+              title: const Text('No Internet Connection'),
+              content: const Text('Please check your connection and try again.'),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    final hasConnection = await _connectivityService.checkConnection();
+                    if (hasConnection) _dismissDialog();
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    ).then((_) => _isDialogVisible = false);
+    );
+
+    overlay.insert(_overlayEntry!);
+    _isDialogVisible = true;
   }
 
   void _dismissDialog() {
-    if (_isDialogVisible) {
-      Navigator.of(_navigatorKey.currentContext!).pop();
+    if (_isDialogVisible && _overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
       _isDialogVisible = false;
     }
   }
@@ -67,6 +79,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _connectivityService.dispose();
+    _dismissDialog();
     super.dispose();
   }
 
