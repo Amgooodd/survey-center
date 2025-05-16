@@ -928,12 +928,33 @@ class SurveyCard extends StatelessWidget {
     required this.createdAt,
     required this.survey,
   });
-  Future<int> _getResponseCount() async {
-    final query = await FirebaseFirestore.instance
-        .collection('students_responses')
-        .where('surveyId', isEqualTo: survey.id)
-        .get();
-    return query.size;
+
+  Future<Map<String, int>> _getResponseStats() async {
+    try {
+      
+      final responseQuery = await FirebaseFirestore.instance
+          .collection('students_responses')
+          .where('surveyId', isEqualTo: survey.id)
+          .get();
+
+      
+      final uniqueRespondents = responseQuery.docs
+          .map((doc) => doc.data()['studentId']?.toString())
+          .whereType<String>()
+          .toSet()
+          .length;
+
+      
+      final recipientCount = (survey.data() as Map<String, dynamic>)['recipientCount'] as int? ?? 0;
+
+      return {
+        'unique': uniqueRespondents,
+        'total': recipientCount,
+      };
+    } catch (e) {
+      print("Error getting response stats: $e");
+      return {'unique': 0, 'total': 0};
+    }
   }
 
   @override
@@ -976,24 +997,25 @@ class SurveyCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          FutureBuilder<int>(
-                            future: _getResponseCount(),
+                          FutureBuilder<Map<String, int>>(
+                            future: _getResponseStats(),
                             builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
                                 return const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
                                 );
                               }
-                              if (snapshot.hasError) return const Text('?');
+                              
+                              final unique = snapshot.data?['unique'] ?? 0;
+                              final total = snapshot.data?['total'] ?? 0;
+                              
                               return Text(
-                                '(${snapshot.data ?? 0} responses)',
+                                '$unique/$total responses',
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: const Color.fromARGB(255, 43, 77, 140),
+                                  color: Color.fromARGB(255, 43, 77, 140),
                                 ),
                               );
                             },
@@ -1025,23 +1047,23 @@ class SurveyCard extends StatelessWidget {
                         children: [
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(255, 253, 200, 0),
-                                minimumSize: Size(100, 36), // Set minimum size
+                                backgroundColor: const Color.fromARGB(255, 253, 200, 0),
+                                minimumSize: Size(100, 36),
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 8)), // Add padding
+                                    vertical: 8)),
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      SurveyDetailsScreen(survey: survey),
+                                  builder: (context) => SurveyDetailsScreen(survey: survey),
                                 ),
                               );
                             },
-                            child: Text('View Details',
-                                style: TextStyle(color: Colors.black)),
+                            child: Text(
+                              'View Details',
+                              style: TextStyle(color: Colors.black),
+                            ),
                           ),
                         ],
                       ),

@@ -105,62 +105,75 @@ void _addQuestion(bool istextfield) {
   }
 
   Future<void> _createNotificationsForSurvey(
-      String surveyId, String surveyName, List<String> departments) async {
-    try {
-      List<String> surveyDeptsUpper = departments
-          .map((d) => d.toUpperCase())
-          .where((d) => d != 'ALL')
-          .toList()
-        ..sort();
+    String surveyId, String surveyName, List<String> departments) async {
+  try {
+    List<String> surveyDeptsUpper = departments
+        .map((d) => d.toUpperCase())
+        .where((d) => d != 'ALL')
+        .toList()
+      ..sort();
 
-      final studentsQuery = FirebaseFirestore.instance.collection('students');
-      Query studentsQueryFiltered;
+    final studentsQuery = FirebaseFirestore.instance.collection('students');
+    Query studentsQueryFiltered;
 
-      if (departments.contains('All')) {
-        studentsQueryFiltered = studentsQuery;
+    if (departments.contains('All')) {
+      studentsQueryFiltered = studentsQuery;
+    } else {
+      if (_requireExactGroupCombination) {
+        final exactGroup = surveyDeptsUpper.join('/');
+        studentsQueryFiltered =
+            studentsQuery.where('group', isEqualTo: exactGroup);
+      } else if (_showOnlySelectedDepartments) {
+        studentsQueryFiltered =
+            studentsQuery.where('group', whereIn: surveyDeptsUpper);
       } else {
-        if (_requireExactGroupCombination) {
-          final exactGroup = surveyDeptsUpper.join('/');
-          studentsQueryFiltered =
-              studentsQuery.where('group', isEqualTo: exactGroup);
-        } else if (_showOnlySelectedDepartments) {
-          studentsQueryFiltered =
-              studentsQuery.where('group', whereIn: surveyDeptsUpper);
-        } else {
-          studentsQueryFiltered = studentsQuery.where('departments',
-              arrayContainsAny: surveyDeptsUpper);
-        }
+        studentsQueryFiltered = studentsQuery.where('departments',
+            arrayContainsAny: surveyDeptsUpper);
       }
-
-      QuerySnapshot studentsSnapshot = await studentsQueryFiltered.get();
-
-      if (studentsSnapshot.docs.isEmpty) return;
-
-      final batch = FirebaseFirestore.instance.batch();
-      final now = FieldValue.serverTimestamp();
-
-      for (final studentDoc in studentsSnapshot.docs) {
-        final notificationRef =
-            FirebaseFirestore.instance.collection('notifications').doc();
-        batch.set(notificationRef, {
-          'surveyId': surveyId,
-          'title': 'New Survey: $surveyName',
-          'body': 'A new survey is available for your department',
-          'departments': departments,
-          'createdAt': now,
-          'isRead': false,
-          'studentId': studentDoc.id,
-          'surveyName': surveyName,
-        });
-      }
-      await batch.commit();
-    } catch (e) {
-      print("Error creating notifications: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to send notifications to students")),
-      );
     }
+
+    QuerySnapshot studentsSnapshot = await studentsQueryFiltered.get();
+
+    if (studentsSnapshot.docs.isEmpty) return;
+
+    
+    final int recipientCount = studentsSnapshot.size;
+
+    final batch = FirebaseFirestore.instance.batch();
+    final now = FieldValue.serverTimestamp();
+
+    
+    final surveyDocRef = 
+        FirebaseFirestore.instance.collection('surveys').doc(surveyId);
+    batch.update(surveyDocRef, {
+      'recipientCount': recipientCount,
+      'responsesReceived': 0,  
+    });
+
+    
+    for (final studentDoc in studentsSnapshot.docs) {
+      final notificationRef =
+          FirebaseFirestore.instance.collection('notifications').doc();
+      batch.set(notificationRef, {
+        'surveyId': surveyId,
+        'title': 'New Survey: $surveyName',
+        'body': 'A new survey is available for your department',
+        'departments': departments,
+        'createdAt': now,
+        'isRead': false,
+        'studentId': studentDoc.id,
+        'surveyName': surveyName,
+      });
+    }
+
+    await batch.commit();
+  } catch (e) {
+    print("Error creating notifications: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to send notifications to students")),
+    );
   }
+}
 
   void _finishSurvey() async {
     final String surveyName = _surveyNameController.text.trim();
