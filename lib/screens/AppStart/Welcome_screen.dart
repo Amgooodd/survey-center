@@ -46,15 +46,30 @@ class _FirstImageScreenState extends State<FirstImageScreen> {
 
   // Preload all images to ensure they're cached and ready
   Future<void> _preloadImages() async {
-    for (var page in _onboardingPages) {
-      // Precache each image
-      await precacheImage(AssetImage(page["image"]!), context);
-    }
+    try {
+      for (var page in _onboardingPages) {
+        // Precache each image with error handling
+        await precacheImage(AssetImage(page["image"]!), context)
+            .catchError((error) {
+          print("Error preloading image ${page["image"]}: $error");
+          // Continue with other images even if one fails
+          return null;
+        });
+      }
 
-    if (mounted) {
-      setState(() {
-        _imagesLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          _imagesLoaded = true;
+        });
+      }
+    } catch (e) {
+      print("Error in image preloading: $e");
+      // Set images as loaded even if there was an error to prevent UI blocking
+      if (mounted) {
+        setState(() {
+          _imagesLoaded = true;
+        });
+      }
     }
   }
 

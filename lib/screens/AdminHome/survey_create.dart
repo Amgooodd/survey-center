@@ -120,46 +120,91 @@ class _CreateSurveyState extends State<CreateSurvey> {
         ..sort();
 
       final studentsQuery = FirebaseFirestore.instance.collection('students');
-      QuerySnapshot studentsSnapshot;
+      List<DocumentSnapshot> studentDocs = [];
+      int recipientCount = 0;
 
       if (departments.contains('All')) {
         // If 'All' is selected, get all students
-        studentsSnapshot = await studentsQuery.get();
+        QuerySnapshot snapshot = await studentsQuery.get();
+        studentDocs = snapshot.docs;
       } else {
         if (_requireExactGroupCombination) {
           // For exact group combination
-          final exactGroup = surveyDeptsUpper.join('/');
-          studentsSnapshot =
-              await studentsQuery.where('group', isEqualTo: exactGroup).get();
+          if (surveyDeptsUpper.length <= 2) {
+            // For one or two departments, we want exact match
+            final exactGroup = surveyDeptsUpper.join('/');
+            QuerySnapshot snapshot =
+                await studentsQuery.where('group', isEqualTo: exactGroup).get();
+            studentDocs = snapshot.docs;
+          } else {
+            // Cannot use exact match with more than two departments
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      "Exact match can only be used with one or two departments")),
+            );
+            return;
+          }
+        } else if (_showOnlySelectedDepartments) {
+          // For separate departments (show to each individually)
+          // Get students whose group exactly matches any of the selected departments
+          Set<String> processedIds = {};
+
+          for (String dept in surveyDeptsUpper) {
+            QuerySnapshot snapshot =
+                await studentsQuery.where('group', isEqualTo: dept).get();
+
+            for (var doc in snapshot.docs) {
+              if (!processedIds.contains(doc.id)) {
+                processedIds.add(doc.id);
+                studentDocs.add(doc);
+              }
+            }
+          }
         } else {
-          // For individual departments - this is the key fix
-          // Use a simple where clause with 'in' operator to match any student whose group
-          // is in the list of selected departments
-          studentsSnapshot = await studentsQuery
-              .where('group', whereIn: surveyDeptsUpper)
-              .get();
+          // Default behavior: show to any group containing any of the selected departments
+          // First try to get all students
+          QuerySnapshot allStudentsSnapshot = await studentsQuery.get();
+          Set<String> processedIds = {};
+
+          for (var doc in allStudentsSnapshot.docs) {
+            String group = (doc.data() as Map<String, dynamic>)['group'] ?? '';
+            List<String> groupComponents =
+                group.split('/').map((e) => e.trim().toUpperCase()).toList();
+
+            // Check if any of the selected departments is in the student's group components
+            for (String dept in surveyDeptsUpper) {
+              if (groupComponents.contains(dept)) {
+                if (!processedIds.contains(doc.id)) {
+                  processedIds.add(doc.id);
+                  studentDocs.add(doc);
+                }
+                break;
+              }
+            }
+          }
         }
       }
 
-      if (studentsSnapshot.docs.isEmpty) {
+      // Create notifications for each student
+      recipientCount = studentDocs.length;
+
+      if (recipientCount == 0) {
         print("No students found matching the criteria: $surveyDeptsUpper");
         return;
       }
 
-      final int recipientCount = studentsSnapshot.size;
       print("Found $recipientCount students for notifications");
 
+      // Update the survey with the recipient count
+      await FirebaseFirestore.instance
+          .collection('surveys')
+          .doc(surveyId)
+          .update({'recipientCount': recipientCount});
+
+      // Create notifications in batches
       final batch = FirebaseFirestore.instance.batch();
-      final now = FieldValue.serverTimestamp();
-
-      final surveyDocRef =
-          FirebaseFirestore.instance.collection('surveys').doc(surveyId);
-      batch.update(surveyDocRef, {
-        'recipientCount': recipientCount,
-        'responsesReceived': 0,
-      });
-
-      for (final studentDoc in studentsSnapshot.docs) {
+      for (var studentDoc in studentDocs) {
         final notificationRef =
             FirebaseFirestore.instance.collection('notifications').doc();
         batch.set(notificationRef, {
@@ -167,7 +212,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
           'title': 'New Survey: $surveyName',
           'body': 'A new survey is available for your department',
           'departments': departments,
-          'createdAt': now,
+          'timestamp': FieldValue.serverTimestamp(),
           'isRead': false,
           'studentId': studentDoc.id,
           'surveyName': surveyName,
@@ -179,7 +224,7 @@ class _CreateSurveyState extends State<CreateSurvey> {
     } catch (e) {
       print("Error creating notifications: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to send notifications to students")),
+        SnackBar(content: Text("Failed to send notifications to students: $e")),
       );
     }
   }
@@ -320,7 +365,8 @@ class _CreateSurveyState extends State<CreateSurvey> {
                     subtitle: Text(
                         "Show only to students in exactly these departments"),
                     value: _requireExactGroupCombination,
-                    onChanged: _selectedDepartments.contains('All')
+                    onChanged: _selectedDepartments.contains('All') ||
+                            _selectedDepartments.length > 2
                         ? null
                         : (value) {
                             setState(() {

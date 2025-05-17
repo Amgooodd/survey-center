@@ -47,44 +47,47 @@ class _StudentFormState extends State<StudentForm> {
   }
 
   void _processSurveys(QuerySnapshot snapshot) {
+    final List<Map<String, dynamic>> surveys = [];
     List<String> studentGroupComponents = widget.studentGroup
         .split('/')
         .map((e) => e.trim().toUpperCase())
         .toList();
 
-    setState(() {
-      _surveys = snapshot.docs.where((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        List<dynamic> surveyDepartments = data['departments'] ?? [];
-        bool requireExact = data['require_exact_group_combination'] ?? false;
-        bool showOnly = data['show_only_selected_departments'] ?? false;
-        List<String> surveyDeptsUpper = surveyDepartments
-            .map((dept) => dept.toString().trim().toUpperCase())
-            .toList();
-        if (surveyDeptsUpper.contains("ALL")) return true;
-        if (requireExact) {
-          List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
-          List<String> sortedStudent = List.from(studentGroupComponents)
-            ..sort();
-          return sortedSurvey.join('/') == sortedStudent.join('/');
-        } else if (showOnly) {
-          return studentGroupComponents.length == 1 &&
-              surveyDeptsUpper.contains(studentGroupComponents[0]);
-        } else {
-          if (surveyDeptsUpper.length == 2) {
-            return studentGroupComponents
-                .every((studentDept) => surveyDeptsUpper.contains(studentDept));
-          } else {
-            return surveyDeptsUpper.any(
-                (surveyDept) => studentGroupComponents.contains(surveyDept));
-          }
-        }
-      }).map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      List<dynamic> surveyDepartments = data['departments'] ?? [];
+      bool requireExact = data['require_exact_group_combination'] ?? false;
+      bool showOnly = data['show_only_selected_departments'] ?? false;
+      List<String> surveyDeptsUpper = surveyDepartments
+          .map((dept) => dept.toString().trim().toUpperCase())
+          .toList();
 
+      // Check if this survey should be shown to this student
+      bool shouldShow = false;
+
+      if (surveyDeptsUpper.contains("ALL")) {
+        shouldShow = true;
+      } else if (requireExact) {
+        List<String> sortedSurvey = List.from(surveyDeptsUpper)..sort();
+        List<String> sortedStudent = List.from(studentGroupComponents)..sort();
+        shouldShow = sortedSurvey.join('/') == sortedStudent.join('/');
+      } else if (showOnly) {
+        shouldShow = studentGroupComponents.length == 1 &&
+            surveyDeptsUpper.contains(studentGroupComponents[0]);
+      } else {
+        // Default behavior: show if student group contains ANY of the selected departments
+        shouldShow = surveyDeptsUpper.any((surveyDept) => 
+            studentGroupComponents.contains(surveyDept));
+      }
+
+      if (shouldShow) {
+        data['id'] = doc.id;
+        surveys.add(data);
+      }
+    }
+
+    setState(() {
+      _surveys = surveys;
       _sortSurveys();
     });
   }
@@ -130,13 +133,17 @@ class _StudentFormState extends State<StudentForm> {
         .where('studentId', isEqualTo: widget.studentId)
         .where('isRead', isEqualTo: false)
         .get();
-    setState(() {
-      _notifications = snapshot.docs.map((doc) {
-        var data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return data;
-      }).toList();
-    });
+
+    // Check if widget is still mounted before updating state
+    if (mounted) {
+      setState(() {
+        _notifications = snapshot.docs.map((doc) {
+          var data = doc.data() as Map<String, dynamic>;
+          data['id'] = doc.id;
+          return data;
+        }).toList();
+      });
+    }
   }
 
   void _clearFilter(String department) {
@@ -812,7 +819,9 @@ class _NotificationsDialogState extends State<NotificationsDialog> {
         separatorBuilder: (context, index) => Divider(height: 1),
         itemBuilder: (context, index) {
           final notification = widget.notifications[index];
-          final date = (notification['createdAt'] as Timestamp).toDate();
+          final date = notification['createdAt'] != null
+              ? (notification['createdAt'] as Timestamp).toDate()
+              : DateTime.now();
           final deadline = notification['deadline'] as Timestamp?;
           final surveyId = notification['surveyId'] ?? '';
 
