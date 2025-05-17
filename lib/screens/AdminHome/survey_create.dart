@@ -15,7 +15,14 @@ class _CreateSurveyState extends State<CreateSurvey> {
   final TextEditingController _surveyNameController = TextEditingController();
   List<Map<String, dynamic>> _questions = [];
 
-  final List<String> _departments = ['All', 'Stat', 'Math', 'CS', 'Chemistry'];
+  final List<String> _departments = [
+    'All',
+    'Stat',
+    'Math',
+    'CS',
+    'Chemistry',
+    'biology'
+  ];
   List<String> _selectedDepartments = [];
   bool _allowMultipleSubmissions = false;
   DateTime? _deadline;
@@ -35,23 +42,24 @@ class _CreateSurveyState extends State<CreateSurvey> {
     });
   }
 
-void _addQuestion(bool istextfield) {
-  setState(() {
-    final questionNumber = _questions.length + 1;
-    if (istextfield) {
-      _questions.add({
-        'title': 'textfield $questionNumber',
-        'type': 'textfield',
-      });
-    } else {
-      _questions.add({
-        'title': 'Question $questionNumber',
-        'type': 'multiple_choice',
-        'options': ['Yes', 'No', 'Maybe'],
-      });
-    }
-  });
-}
+  void _addQuestion(bool istextfield) {
+    setState(() {
+      final questionNumber = _questions.length + 1;
+      if (istextfield) {
+        _questions.add({
+          'title': 'textfield $questionNumber',
+          'type': 'textfield',
+        });
+      } else {
+        _questions.add({
+          'title': 'Question $questionNumber',
+          'type': 'multiple_choice',
+          'options': ['Yes', 'No', 'Maybe'],
+        });
+      }
+    });
+  }
+
   Future<void> _addSurveyToDatabase(
       String surveyName, List<Map<String, dynamic>> questions) async {
     try {
@@ -62,8 +70,6 @@ void _addQuestion(bool istextfield) {
         return;
       }
 
-      
-      
       String currentUserId =
           FirebaseAuth.instance.currentUser?.uid ?? "unknown";
 
@@ -89,7 +95,7 @@ void _addQuestion(bool istextfield) {
         'deadline': _deadline,
         'require_exact_group_combination': _requireExactGroupCombination,
         'show_only_selected_departments': _showOnlySelectedDepartments,
-        'madyby': currentUserId, 
+        'madyby': currentUserId,
       });
       await _createNotificationsForSurvey(
           surveyRef.id, surveyName, _selectedDepartments);
@@ -105,75 +111,78 @@ void _addQuestion(bool istextfield) {
   }
 
   Future<void> _createNotificationsForSurvey(
-    String surveyId, String surveyName, List<String> departments) async {
-  try {
-    List<String> surveyDeptsUpper = departments
-        .map((d) => d.toUpperCase())
-        .where((d) => d != 'ALL')
-        .toList()
-      ..sort();
+      String surveyId, String surveyName, List<String> departments) async {
+    try {
+      List<String> surveyDeptsUpper = departments
+          .map((d) => d.toUpperCase())
+          .where((d) => d != 'ALL')
+          .toList()
+        ..sort();
 
-    final studentsQuery = FirebaseFirestore.instance.collection('students');
-    Query studentsQueryFiltered;
+      final studentsQuery = FirebaseFirestore.instance.collection('students');
+      QuerySnapshot studentsSnapshot;
 
-    if (departments.contains('All')) {
-      studentsQueryFiltered = studentsQuery;
-    } else {
-      if (_requireExactGroupCombination) {
-        final exactGroup = surveyDeptsUpper.join('/');
-        studentsQueryFiltered =
-            studentsQuery.where('group', isEqualTo: exactGroup);
-      } else if (_showOnlySelectedDepartments) {
-        studentsQueryFiltered =
-            studentsQuery.where('group', whereIn: surveyDeptsUpper);
+      if (departments.contains('All')) {
+        // If 'All' is selected, get all students
+        studentsSnapshot = await studentsQuery.get();
       } else {
-        studentsQueryFiltered = studentsQuery.where('departments',
-            arrayContainsAny: surveyDeptsUpper);
+        if (_requireExactGroupCombination) {
+          // For exact group combination
+          final exactGroup = surveyDeptsUpper.join('/');
+          studentsSnapshot =
+              await studentsQuery.where('group', isEqualTo: exactGroup).get();
+        } else {
+          // For individual departments - this is the key fix
+          // Use a simple where clause with 'in' operator to match any student whose group
+          // is in the list of selected departments
+          studentsSnapshot = await studentsQuery
+              .where('group', whereIn: surveyDeptsUpper)
+              .get();
+        }
       }
-    }
 
-    QuerySnapshot studentsSnapshot = await studentsQueryFiltered.get();
+      if (studentsSnapshot.docs.isEmpty) {
+        print("No students found matching the criteria: $surveyDeptsUpper");
+        return;
+      }
 
-    if (studentsSnapshot.docs.isEmpty) return;
+      final int recipientCount = studentsSnapshot.size;
+      print("Found $recipientCount students for notifications");
 
-    
-    final int recipientCount = studentsSnapshot.size;
+      final batch = FirebaseFirestore.instance.batch();
+      final now = FieldValue.serverTimestamp();
 
-    final batch = FirebaseFirestore.instance.batch();
-    final now = FieldValue.serverTimestamp();
-
-    
-    final surveyDocRef = 
-        FirebaseFirestore.instance.collection('surveys').doc(surveyId);
-    batch.update(surveyDocRef, {
-      'recipientCount': recipientCount,
-      'responsesReceived': 0,  
-    });
-
-    
-    for (final studentDoc in studentsSnapshot.docs) {
-      final notificationRef =
-          FirebaseFirestore.instance.collection('notifications').doc();
-      batch.set(notificationRef, {
-        'surveyId': surveyId,
-        'title': 'New Survey: $surveyName',
-        'body': 'A new survey is available for your department',
-        'departments': departments,
-        'createdAt': now,
-        'isRead': false,
-        'studentId': studentDoc.id,
-        'surveyName': surveyName,
+      final surveyDocRef =
+          FirebaseFirestore.instance.collection('surveys').doc(surveyId);
+      batch.update(surveyDocRef, {
+        'recipientCount': recipientCount,
+        'responsesReceived': 0,
       });
-    }
 
-    await batch.commit();
-  } catch (e) {
-    print("Error creating notifications: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Failed to send notifications to students")),
-    );
+      for (final studentDoc in studentsSnapshot.docs) {
+        final notificationRef =
+            FirebaseFirestore.instance.collection('notifications').doc();
+        batch.set(notificationRef, {
+          'surveyId': surveyId,
+          'title': 'New Survey: $surveyName',
+          'body': 'A new survey is available for your department',
+          'departments': departments,
+          'createdAt': now,
+          'isRead': false,
+          'studentId': studentDoc.id,
+          'surveyName': surveyName,
+        });
+      }
+
+      await batch.commit();
+      print("Successfully sent notifications to $recipientCount students");
+    } catch (e) {
+      print("Error creating notifications: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to send notifications to students")),
+      );
+    }
   }
-}
 
   void _finishSurvey() async {
     final String surveyName = _surveyNameController.text.trim();
@@ -430,8 +439,8 @@ void _addQuestion(bool istextfield) {
                         ),
                         IconButton(
                           icon: Icon(Icons.delete),
-                          color: Colors.red, 
-                          iconSize: 24, 
+                          color: Colors.red,
+                          iconSize: 24,
                           splashColor: Colors.red.withOpacity(0.2),
                           onPressed: () => _deleteQuestion(index),
                         ),
@@ -461,17 +470,14 @@ void _addQuestion(bool istextfield) {
                             final optionIndex = optionEntry.key;
                             final option = optionEntry.value;
 
-                            
                             if (question['controllers'] == null) {
                               question['controllers'] = [];
                             }
 
-                            
                             if (optionIndex >= question['controllers'].length) {
                               question['controllers']
                                   .add(TextEditingController(text: option));
                             } else {
-                              
                               if (question['controllers'][optionIndex].text !=
                                   option) {
                                 question['controllers'][optionIndex].text =
@@ -496,13 +502,11 @@ void _addQuestion(bool istextfield) {
                                 ),
                                 IconButton(
                                   icon: Icon(Icons.delete),
-                                  color: Colors
-                                      .red, 
-                                  iconSize: 24, 
+                                  color: Colors.red,
+                                  iconSize: 24,
                                   splashColor: Colors.red.withOpacity(0.2),
                                   onPressed: () {
                                     setState(() {
-                                      
                                       final controller = question['controllers']
                                           .removeAt(optionIndex);
                                       controller.dispose();
@@ -521,7 +525,7 @@ void _addQuestion(bool istextfield) {
                                   setState(() {
                                     final newOption = 'New Option';
                                     question['options'].add(newOption);
-                                    
+
                                     if (question['controllers'] == null) {
                                       question['controllers'] = [];
                                     }
@@ -599,7 +603,7 @@ void _addQuestion(bool istextfield) {
   void _deleteQuestion(int index) {
     setState(() {
       _questions.removeAt(index);
-      
+
       for (int i = 0; i < _questions.length; i++) {
         final question = _questions[i];
         if (question['title'].startsWith('Question ')) {
