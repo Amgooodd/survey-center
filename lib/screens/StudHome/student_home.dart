@@ -79,15 +79,16 @@ class _StudentFormState extends State<StudentForm> {
                 (surveyDept) => studentGroupComponents.contains(surveyDept));
           }
         }
-        }).map((doc) {
+      }).map((doc) {
         var data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
         return data;
       }).toList();
 
-      _sortSurveys(); 
+      _sortSurveys();
     });
   }
+
   void _sortSurveys() {
     _surveys.sort((a, b) {
       switch (_selectedSortOption) {
@@ -108,9 +109,6 @@ class _StudentFormState extends State<StudentForm> {
       }
     });
   }
-
-
-    
 
   @override
   void dispose() {
@@ -294,15 +292,35 @@ class _StudentFormState extends State<StudentForm> {
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Notifications',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
+                                        color: Color.fromARGB(255, 28, 51, 95),
                                       ),
                                     ),
+                                    if (_notifications.isNotEmpty)
+                                      TextButton(
+                                        onPressed: _markAllNotificationsAsRead,
+                                        style: TextButton.styleFrom(
+                                          minimumSize: Size.zero,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          'Clear All',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -775,104 +793,155 @@ class _NotificationsDialogState extends State<NotificationsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.notifications_active, color: Colors.blue),
-          SizedBox(width: 10),
-          Text('Notifications'),
-        ],
-      ),
-      content: widget.notifications.isNotEmpty
-          ? SizedBox(
-              width: double.maxFinite,
-              height: 300,
-              child: ListView.separated(
-                itemCount: widget.notifications.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final notification = widget.notifications[index];
-                  final date =
-                      (notification['createdAt'] as Timestamp).toDate();
-                  final deadline = notification['deadline'] as Timestamp?;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: notification['title'] == 'Survey About to End'
-                        ? const Icon(Icons.warning, color: Colors.red)
-                        : const Icon(Icons.campaign, color: Colors.blue),
-                    title: Text(
-                      notification['title'],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+    // Calculate a more appropriate height based on number of notifications
+    // Each notification takes about 100px plus some padding
+    double notificationHeight = widget.notifications.length == 1
+        ? 150.0
+        : 120.0 * widget.notifications.length;
+
+    // Limit maximum height to 50% of screen height
+    double maxHeight = MediaQuery.of(context).size.height * 0.5;
+    double adaptiveHeight =
+        notificationHeight < maxHeight ? notificationHeight : maxHeight;
+
+    return SizedBox(
+      height: adaptiveHeight,
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: widget.notifications.length,
+        separatorBuilder: (context, index) => Divider(height: 1),
+        itemBuilder: (context, index) {
+          final notification = widget.notifications[index];
+          final date = (notification['createdAt'] as Timestamp).toDate();
+          final deadline = notification['deadline'] as Timestamp?;
+          final surveyId = notification['surveyId'] ?? '';
+
+          return Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: notification['title'] == 'Survey About to End'
+                            ? Colors.red.withOpacity(0.1)
+                            : Colors.blue.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        notification['title'] == 'Survey About to End'
+                            ? Icons.warning
+                            : Icons.campaign,
+                        color: notification['title'] == 'Survey About to End'
+                            ? Colors.red
+                            : Colors.blue,
+                        size: 20,
+                      ),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (notification['title'] == 'Survey About to End' &&
-                            deadline != null)
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Time remaining: ${_getRemainingTime(deadline)}',
-                            style: TextStyle(color: Colors.red),
+                            notification['title'],
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color.fromARGB(255, 28, 51, 95),
+                            ),
                           ),
-                        Text(notification['body']),
-                        const SizedBox(height: 4),
-                        Text(
-                          DateFormat('MMM dd, yyyy - HH:mm').format(date),
-                          style:
-                              const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.done_all, color: Colors.green),
-                      onPressed: () =>
-                          widget.markNotificationAsRead(notification['id']),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SurveyQuestionsPage(
-                            studentId: widget.studentId,
-                            surveyId: notification['surveyId'],
-                            studentGroup: widget.studentGroup,
+                          SizedBox(height: 4),
+                          if (notification['title'] == 'Survey About to End' &&
+                              deadline != null)
+                            Text(
+                              'Time remaining: ${_getRemainingTime(deadline)}',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          Text(
+                            notification['body'],
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color.fromARGB(255, 28, 51, 95),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            )
-          : SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.notifications_off, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No new notifications',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
+                          SizedBox(height: 4),
+                          Text(
+                            DateFormat('MMM dd, yyyy - HH:mm').format(date),
+                            style:
+                                TextStyle(fontSize: 11, color: Colors.blueGrey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        widget.markNotificationAsRead(notification['id']);
+                      },
+                      style: TextButton.styleFrom(
+                        minimumSize: Size.zero,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Mark as read',
+                        style: TextStyle(fontSize: 12, color: Colors.blue),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        widget.markNotificationAsRead(notification['id']);
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SurveyQuestionsPage(
+                              studentId: widget.studentId,
+                              surveyId: surveyId,
+                              studentGroup: widget.studentGroup,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 28, 51, 95),
+                        minimumSize: Size.zero,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'View',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-      actions: [
-        TextButton(
-          onPressed: widget.notifications.isEmpty
-              ? null
-              : widget.markAllNotificationsAsRead,
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.done_all, color: Colors.green),
-              SizedBox(width: 5),
-              Text("Mark All as Read"),
-            ],
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
 }
@@ -1038,9 +1107,7 @@ class _SurveyQuestionsPageState extends State<SurveyQuestionsPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            _surveyName.isNotEmpty
-                ? _surveyName
-                : 'Survey',
+            _surveyName.isNotEmpty ? _surveyName : 'Survey',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white),
