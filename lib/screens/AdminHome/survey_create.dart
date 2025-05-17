@@ -331,39 +331,56 @@ class _CreateSurveyState extends State<CreateSurvey> {
                     color: Colors.black),
               ),
               SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                children: _departments.map((department) {
-                  bool isSelectable = department == 'All' ||
-                      !_selectedDepartments.contains('All');
-                  return FilterChip(
-                    label: Text(department),
-                    selected: _selectedDepartments.contains(department),
-                    onSelected: (isSelected) {
-                      if (!isSelectable) return;
-                      setState(() {
-                        if (department == 'All') {
-                          _selectedDepartments = isSelected ? ['All'] : [];
-                        } else {
-                          if (isSelected) {
-                            _selectedDepartments.add(department);
-                          } else {
-                            _selectedDepartments.remove(department);
-                          }
-                        }
-                      });
-                    },
-                    backgroundColor: isSelectable ? null : Colors.grey[300],
-                  );
-                }).toList(),
+              // Department selection slider
+              Container(
+                height: 50,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: _departments.map((department) {
+                    bool isSelectable = department == 'All' ||
+                        !_selectedDepartments.contains('All');
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(department),
+                        selected: _selectedDepartments.contains(department),
+                        onSelected: (isSelected) {
+                          if (!isSelectable) return;
+                          setState(() {
+                            if (department == 'All') {
+                              _selectedDepartments = isSelected ? ['All'] : [];
+                            } else {
+                              if (isSelected) {
+                                _selectedDepartments.add(department);
+                              } else {
+                                _selectedDepartments.remove(department);
+                              }
+                            }
+                          });
+                        },
+                        backgroundColor: isSelectable ? null : Colors.grey[300],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
-              SizedBox(height: 30),
+              if (_selectedDepartments.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    "Selected: ${_selectedDepartments.join(', ')}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 28, 51, 95),
+                    ),
+                  ),
+                ),
+              SizedBox(height: 10),
               Column(
                 children: [
                   SwitchListTile(
                     title: Text("Exact Department"),
-                    subtitle: Text(
-                        "Show only to students in exactly these departments"),
+                    subtitle: Text("Only this specific department"),
                     value: _requireExactGroupCombination,
                     onChanged: _selectedDepartments.contains('All') ||
                             _selectedDepartments.length > 2
@@ -377,21 +394,12 @@ class _CreateSurveyState extends State<CreateSurvey> {
                   ),
                   SwitchListTile(
                     title: Text("Separate Departments"),
-                    subtitle:
-                        Text("Show to each selected department individually"),
+                    subtitle: Text("Don't include double departments"),
                     value: _showOnlySelectedDepartments,
-                    onChanged: _selectedDepartments.contains('All')
+                    onChanged: _selectedDepartments.contains('All') ||
+                            _selectedDepartments.length < 2
                         ? null
                         : (value) {
-                            if (value == true &&
-                                _selectedDepartments.length < 2) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        "You must select at least 2 departments for this option")),
-                              );
-                              return;
-                            }
                             setState(() {
                               _showOnlySelectedDepartments = value;
                               if (value) _requireExactGroupCombination = false;
