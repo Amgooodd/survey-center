@@ -88,23 +88,33 @@ class _CombinedLoginState extends State<CombinedLogin> {
     if (id.isEmpty) return;
 
     await _saveId(id);
-    final adminDoc =
-        await FirebaseFirestore.instance.collection('admins').doc(id).get();
-    if (adminDoc.exists) {
-      final hasEmail = (adminDoc.data()?['email'] ?? '').isNotEmpty;
+    final adminDoc = await FirebaseFirestore.instance.collection('admins').doc(id).get();
+if (adminDoc.exists) {
+  final hasEmail = (adminDoc.data()?['email'] ?? '').isNotEmpty;
+  final isEmailVerified = adminDoc.data()?['isEmailVerified'] ?? false;
 
+     if (hasEmail && !isEmailVerified) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => AdminLoginPage(
-            adminId: id,
-            isFirstLogin: !hasEmail,
-          ),
+          builder: (_) => PasswordResetPage(adminId: id),
         ),
       );
       return;
     }
 
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminLoginPage(
+          adminId: id,
+          isFirstLogin: !hasEmail,
+        ),
+      ),
+    );
+    return;
+  }
     final studentDoc =
         await FirebaseFirestore.instance.collection('students').doc(id).get();
     final isStudent = studentDoc.exists;
@@ -572,19 +582,19 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
   final Color _primaryColor = const Color.fromARGB(255, 28, 51, 95);
   final Color _accentColor = const Color.fromARGB(255, 253, 200, 0);
 
-  Future<void> _updateAdminEmail(String email) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(widget.adminId)
-          .update({'email': email});
-      print('Successfully updated admin email in Firestore');
-    } catch (e) {
-      print('Error updating admin email: $e');
-      throw Exception('Failed to update admin email');
-    }
+Future<void> _updateAdminEmail(String email) async {
+  try {
+    await FirebaseFirestore.instance
+        .collection('admins')
+        .doc(widget.adminId)
+        .update({
+          'email': email,
+          'isEmailVerified': false, 
+        });
+  } catch (e) {
+    throw Exception('Failed to update admin email');
   }
-
+}
   Future<void> _sendVerificationEmail() async {
     final email = _emailController.text.trim();
     final newPass = _newPassController.text.trim();
@@ -604,51 +614,78 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
       return;
     }
 
-    try {
-      final userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: newPass);
+  try {
+    
+    final userCredential = await FirebaseAuth.instance
+        .createUserWithEmailAndPassword(email: email, password: newPass);
 
-      if (userCredential.user != null && !userCredential.user!.emailVerified) {
-        await userCredential.user!.sendEmailVerification();
-        setState(() => _isEmailSent = true);
-      }
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Authentication error: ${e.message ?? 'Unknown error'}')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+    
+    await _updateAdminEmail(email); 
+
+    
+    if (!userCredential.user!.emailVerified) {
+      await userCredential.user!.sendEmailVerification();
+      setState(() => _isEmailSent = true);
     }
+  } catch (e) {
+    
   }
+}
+Future<void> _checkEmailVerification() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-  Future<void> _checkEmailVerification() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    await user.reload();
+  try {
+    await user.reload(); 
     if (user.emailVerified) {
-      try {
-        await _updateAdminEmail(_emailController.text.trim());
-        setState(() => _isEmailVerified = true);
-        await Future.delayed(const Duration(seconds: 2));
-        Navigator.popUntil(context, (route) => route.isFirst);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update account: $e')),
-        );
-      }
+      
+      await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(widget.adminId)
+          .update({'isEmailVerified': true});
+
+      
+      setState(() => _isEmailVerified = true);
+
+      
+      await Future.delayed(const Duration(seconds: 2));
+
+      
+      Navigator.popUntil(context, (route) => route.isFirst);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Email not verified yet. Please check your inbox.')),
+          content: Text('Email not verified yet. Check your inbox.'),
+        ),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
+  @override
+void initState() {
+  super.initState();
+  _checkAdminVerificationStatus();
+}
 
+Future<void> _checkAdminVerificationStatus() async {
+  final adminDoc = await FirebaseFirestore.instance
+      .collection('admins')
+      .doc(widget.adminId)
+      .get();
+  final email = adminDoc.data()?['email'] as String?;
+  final isEmailVerified = adminDoc.data()?['isEmailVerified'] ?? false;
+
+  if (email != null && email.isNotEmpty && !isEmailVerified) {
+    setState(() {
+      _isEmailSent = true;
+      _emailController.text = email;
+    });
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -657,7 +694,7 @@ class _PasswordResetPageState extends State<PasswordResetPage> {
             const Text('Account Setup', style: TextStyle(color: Colors.white)),
         backgroundColor: _primaryColor,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        automaticallyImplyLeading: false, 
       ),
       backgroundColor: Colors.white,
       body: Padding(

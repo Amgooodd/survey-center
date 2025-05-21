@@ -22,6 +22,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
     final adminId = _idController.text.trim();
     final name = _nameController.text.trim();
     final password = _generatePassword();
+    final isEmailVerified = false;
 
     try {
       await _firestore.collection('admins').doc(adminId).set({
@@ -30,6 +31,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         'defaultPassword': password,
         'isSuperAdmin': false,
         'createdAt': FieldValue.serverTimestamp(),
+        'isEmailVerified': isEmailVerified
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Admin $name created successfully')),
