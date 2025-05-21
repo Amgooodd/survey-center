@@ -595,6 +595,7 @@ Future<void> _updateAdminEmail(String email) async {
     throw Exception('Failed to update admin email');
   }
 }
+User? _previousUser;
   Future<void> _sendVerificationEmail() async {
     final email = _emailController.text.trim();
     final newPass = _newPassController.text.trim();
@@ -614,24 +615,27 @@ Future<void> _updateAdminEmail(String email) async {
       return;
     }
 
-  try {
+   try {
     
+    if (_previousUser != null) {
+      await _previousUser!.delete();
+      _previousUser = null;
+    }
+
     final userCredential = await FirebaseAuth.instance
         .createUserWithEmailAndPassword(email: email, password: newPass);
+    _previousUser = userCredential.user;
 
-    
-    await _updateAdminEmail(email); 
-
-    
-    if (!userCredential.user!.emailVerified) {
-      await userCredential.user!.sendEmailVerification();
-      setState(() => _isEmailSent = true);
-    }
+    await _updateAdminEmail(email);
+    await userCredential.user!.sendEmailVerification();
+    setState(() => _isEmailSent = true);
   } catch (e) {
     
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${e.toString()}')),
+    );
   }
-}
-Future<void> _checkEmailVerification() async {
+}Future<void> _checkEmailVerification() async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
 
@@ -822,13 +826,13 @@ Future<void> _checkAdminVerificationStatus() async {
     );
   }
 
-  Widget _buildVerificationPending() {
+Widget _buildVerificationPending() {
     return Column(
       children: [
         const Icon(
           Icons.mark_email_read,
           size: 80,
-          color: const Color.fromARGB(255, 253, 200, 0),
+          color: Color.fromARGB(255, 253, 200, 0),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -855,6 +859,36 @@ Future<void> _checkAdminVerificationStatus() async {
           child: const Text('I\'ve Verified My Email',
               style: TextStyle(color: Colors.black)),
         ),
+        const SizedBox(height: 15),
+        TextButton(
+  onPressed: () async {
+    if (_previousUser != null) {
+      try {
+        
+        await _previousUser!.delete();
+        
+        
+        await FirebaseFirestore.instance
+            .collection('admins')
+            .doc(widget.adminId)
+            .update({
+              'email': FieldValue.delete(), 
+              'isEmailVerified': false,
+            });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting account: $e')),
+        );
+      }
+      _previousUser = null;
+    }
+    setState(() => _isEmailSent = false);
+  },
+  child: const Text(
+    'Edit Email Address',
+    style: TextStyle(color: Color.fromARGB(255, 28, 51, 95)),
+  ),
+)
       ],
     );
   }
