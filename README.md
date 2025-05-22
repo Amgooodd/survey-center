@@ -1,16 +1,27 @@
-# student_questionnaire
+---
+icon: hand-wave
+cover: .gitbook/assets/cover.png
+coverY: 0
+layout:
+  cover:
+    visible: true
+    size: hero
+  title:
+    visible: true
+  description:
+    visible: false
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: true
+---
 
-A new Flutter project.
+# Survey center
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Welcome to our Survey Center Application — a powerful easy to use platform designed to help you create, distribute, and analyze surveys effortlessly.**\
+\
+**Whether you’re gathering feedback, conducting research, or collecting opinions, our app provides all the essential tools to connect with your audience and gain meaningful insights.**\
+\
+**Let’s explore how it works :**
