@@ -4,6 +4,19 @@
 
 Our Survey Center Application is built using modern technologies to ensure a smooth, reliable, and user-friendly experience for both administrators and students. Below is an overview of the key technologies and tools that power the development and functionality of the application
 
+| Category               | Technologies                                |
+| ---------------------- | ------------------------------------------- |
+| **Interface design**   | Figma                                       |
+| **Frontend Framework** | Flutter                                     |
+| **State Management**   | Provider                                    |
+| **Backend Services**   | Firebase Authentication, Cloud Firestore    |
+| **Data Visualization** | fl\_chart                                   |
+| **File Operations**    | excel, csv, syncfusion\_flutter\_xlsio, pdf |
+| **Storage Access**     | path\_provider, permission\_handler         |
+| **Local Storage**      | shared\_preferences                         |
+
+
+
 #### **1. User Interface Design**
 
 * **Figma**\
@@ -29,3 +42,4 @@ Our Survey Center Application is built using modern technologies to ensure a smo
 
 * **Firebase Authentication**: Secure and reliable user authentication, enabling students and administrators to log in and access the application safely.
 * **Cloud Firestore**: A scalable, real-time database that stores all survey data, student information, and departmental assignments, ensuring quick data access and synchronization.
+

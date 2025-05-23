@@ -8,4 +8,4 @@ The **Survey History** screen in **Survey Center** provides students with an ove
 * **Survey Cards**: Each survey entry is shown as a card with the following details:
   * **Question and Answer Display**: Each question from the survey will be displayed alongside the corresponding answer the student provided, making it easy for the student to review their input.
 
-<figure><img src=".gitbook/assets/image (2).png" alt="" width="375"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (2) (1).png" alt="" width="375"><figcaption></figcaption></figure>

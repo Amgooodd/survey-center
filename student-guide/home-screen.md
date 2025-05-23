@@ -8,7 +8,7 @@ The **Student Home Screen** in **Survey Center** provides students with a simple
   * **New Surveys**: The student will be notified when a new survey has been assigned to their department and is available for participation.
   * **Deadline Reminders**: The notification will also alert the student when the deadline of an active survey is approaching, ensuring they have enough time to complete it before it closes.
 
-<figure><img src="../.gitbook/assets/image (7).png" alt="" width="375"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (7) (1).png" alt="" width="375"><figcaption></figcaption></figure>
 
 * **Interactive Notifications**: Tapping on the notification icon will display a list of notifications, showing:
   * **Survey Name**: The title of the new or upcoming survey.

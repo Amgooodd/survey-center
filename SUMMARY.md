@@ -10,6 +10,11 @@
 
 * [Technology used](technology-used.md)
 
+## App Flow Overview
+
+* [Architecture](app-flow-overview/architecture.md)
+* [Dependencies](app-flow-overview/dependencies.md)
+
 ## app start
 
 * [Splash screen & Welcome screen](app-start/splash-screen-and-welcome-screen.md)

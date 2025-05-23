@@ -9,7 +9,7 @@ The administrator is required to enter their unique **Admin ID**, which is a spe
 * This ID confirms that the admin has been pre-approved by the faculty leadership to access the system.
 * If the ID does not match the list of approved IDs stored in Firestore, the sign-up process cannot proceed.
 
-<figure><img src="../.gitbook/assets/image.png" alt="" width="329"><figcaption></figcaption></figure>
+<figure><img src="../.gitbook/assets/image (7).png" alt="" width="329"><figcaption></figcaption></figure>
 
 **2- Enter Default Password**\
 After entering the Admin ID, the admin must input the **default password** given by the Super Admin.

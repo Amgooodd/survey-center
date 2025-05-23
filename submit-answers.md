@@ -6,7 +6,7 @@ The **Survey Submission Page** is designed to provide students with a smooth and
 
 * **Progress Bar**: A **progress bar** runs across the top, visually showing how much of the survey has been completed and how many questions are left to answer. This provides students with a clear sense of their progress and how much is remaining.
 
-<figure><img src=".gitbook/assets/image (3).png" alt="" width="375"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (3) (1).png" alt="" width="375"><figcaption></figcaption></figure>
 
 #### 2. **Questions Section**
 
@@ -15,17 +15,17 @@ The **Survey Submission Page** is designed to provide students with a smooth and
   * **Text-Based Questions**: A text box is provided for open-ended responses where students can type their answer.
 * **Answer Field**: For each question, there’s a dedicated field where students can input their answer. If it’s a multiple-choice question, the options will be displayed with clickable checkboxes.
 
-<figure><img src=".gitbook/assets/image (4).png" alt="" width="375"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (4) (1).png" alt="" width="375"><figcaption></figcaption></figure>
 
 #### 3. **Complete Questions**
 
 * **Completion Check**: All questions are marked as **mandatory**. Students cannot submit the survey until they have answered all questions, ensuring that no question is skipped.
 * **Disabled Submit Button**: The **submit button** remains disabled until all questions are answered. Once all questions have been completed, the button will allow the student to submit the survey.
 
-<figure><img src=".gitbook/assets/image (5).png" alt="" width="375"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (5) (1).png" alt="" width="375"><figcaption></figcaption></figure>
 
 #### 5. **Completion and Confirmation**
 
 * **Thank You Message**: Once the student completes all questions and presses the submit button, a Thank You message will appear.
 
-<figure><img src=".gitbook/assets/image (6).png" alt="" width="375"><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/image (6) (1).png" alt="" width="375"><figcaption></figcaption></figure>
