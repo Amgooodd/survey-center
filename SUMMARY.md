@@ -10,10 +10,10 @@
 
 * [Technology used](technology-used.md)
 
-## App Flow Overview
+## Overview
 
-* [Architecture](app-flow-overview/architecture.md)
-* [Dependencies](app-flow-overview/dependencies.md)
+* [Architecture](overview/architecture.md)
+* [Dependencies](overview/dependencies.md)
 
 ## app start
 
